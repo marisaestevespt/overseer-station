@@ -14,7 +14,139 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activity_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: string | null
+          id: string
+          instance_id: string
+          performed_by: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          instance_id: string
+          performed_by?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          instance_id?: string
+          performed_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_log_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instances: {
+        Row: {
+          business_name: string
+          created_at: string
+          first_login_at: string | null
+          health_check_url: string | null
+          health_status: Database["public"]["Enums"]["health_status"]
+          id: string
+          instance_url: string | null
+          invite_sent_at: string | null
+          last_health_check: string | null
+          notes: string | null
+          owner_email: string
+          owner_name: string
+          status: Database["public"]["Enums"]["instance_status"]
+          supabase_project_ref: string | null
+        }
+        Insert: {
+          business_name: string
+          created_at?: string
+          first_login_at?: string | null
+          health_check_url?: string | null
+          health_status?: Database["public"]["Enums"]["health_status"]
+          id?: string
+          instance_url?: string | null
+          invite_sent_at?: string | null
+          last_health_check?: string | null
+          notes?: string | null
+          owner_email: string
+          owner_name: string
+          status?: Database["public"]["Enums"]["instance_status"]
+          supabase_project_ref?: string | null
+        }
+        Update: {
+          business_name?: string
+          created_at?: string
+          first_login_at?: string | null
+          health_check_url?: string | null
+          health_status?: Database["public"]["Enums"]["health_status"]
+          id?: string
+          instance_url?: string | null
+          invite_sent_at?: string | null
+          last_health_check?: string | null
+          notes?: string | null
+          owner_email?: string
+          owner_name?: string
+          status?: Database["public"]["Enums"]["instance_status"]
+          supabase_project_ref?: string | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          id: string
+          instance_id: string
+          monthly_amount: number
+          plan: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          trial_ends_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          instance_id: string
+          monthly_amount?: number
+          plan?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          instance_id?: string
+          monthly_amount?: number
+          plan?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +155,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      health_status: "ok" | "error" | "unknown"
+      instance_status: "active" | "suspended" | "cancelled" | "setup"
+      subscription_status: "active" | "past_due" | "cancelled" | "trialing"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +284,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      health_status: ["ok", "error", "unknown"],
+      instance_status: ["active", "suspended", "cancelled", "setup"],
+      subscription_status: ["active", "past_due", "cancelled", "trialing"],
+    },
   },
 } as const
