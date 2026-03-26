@@ -31,7 +31,7 @@ serve(async (req) => {
   );
 
   try {
-    const { instanceId } = await req.json();
+    const { instanceId, billingStartDate } = await req.json();
     if (!instanceId) throw new Error("instanceId is required");
 
     log("Creating subscription for instance", { instanceId });
