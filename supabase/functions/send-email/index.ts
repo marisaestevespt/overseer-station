@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
-import { welcomeEmail, paymentFailedEmail } from "../_shared/emailTemplates.ts";
+import { welcomeEmail, paymentFailedEmail, renewalReminderEmail } from "../_shared/emailTemplates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -57,6 +57,13 @@ serve(async (req) => {
         const updateUrl = extraData?.updatePaymentUrl || "#";
         html = paymentFailedEmail(instance.owner_name, monthYear, updateUrl);
         subject = "Problema com o teu pagamento";
+        break;
+      }
+      case "renewal-reminder": {
+        const renewalDate = extraData?.renewalDate || "";
+        const amount = extraData?.amount || "0";
+        html = renewalReminderEmail(instance.owner_name, renewalDate, amount);
+        subject = "A tua subscrição renova em breve";
         break;
       }
       default:
