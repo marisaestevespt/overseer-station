@@ -1,7 +1,7 @@
 // Shared email template functions for Edge Functions
 // Brand: bordeaux header, bege body, warm footer
 
-const SYSTEM_NAME = Deno.env.get("SYSTEM_NAME") || "Admin Panel";
+const SYSTEM_NAME = Deno.env.get("SYSTEM_NAME") || "Marisa Esteves";
 
 function baseLayout(content: string, systemName: string = SYSTEM_NAME): string {
   return `<!DOCTYPE html>

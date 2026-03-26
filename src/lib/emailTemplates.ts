@@ -1,7 +1,7 @@
 // Email template generator functions for Resend
 // All templates follow the brand identity: bordeaux header, bege body, warm footer
 
-const SYSTEM_NAME = "Admin Panel";
+const SYSTEM_NAME = "Marisa Esteves";
 
 interface WelcomeEmailData {
   ownerName: string;
