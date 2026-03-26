@@ -1,0 +1,1 @@
+ALTER TABLE public.subscriptions ADD COLUMN billing_start_date timestamp with time zone DEFAULT NULL;
