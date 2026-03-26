@@ -5,13 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default function NewInstance() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [billingStartDate, setBillingStartDate] = useState<Date | undefined>();
   const [form, setForm] = useState({
     business_name: "",
     owner_name: "",
@@ -60,14 +65,15 @@ export default function NewInstance() {
         instance_id: instance.id,
         monthly_amount: parseFloat(form.monthly_amount),
         status: "active",
-      });
+        billing_start_date: billingStartDate ? billingStartDate.toISOString() : null,
+      } as any);
     }
 
     // Log activity
     await supabase.from("activity_log").insert({
       instance_id: instance.id,
       action: "Instância criada",
-      details: `Negócio: ${form.business_name}, Owner: ${form.owner_name}`,
+      details: `Negócio: ${form.business_name}, Owner: ${form.owner_name}${billingStartDate ? `, Cobrança a partir de: ${format(billingStartDate, "dd/MM/yyyy")}` : ""}`,
       performed_by: "admin",
     });
 
@@ -112,9 +118,39 @@ export default function NewInstance() {
           <Input value={form.health_check_url} onChange={(e) => setForm((f) => ({ ...f, health_check_url: e.target.value }))} placeholder="Preenchido automaticamente" />
         </div>
 
-        <div className="space-y-2">
-          <Label>Valor mensal (€)</Label>
-          <Input type="number" step="0.01" value={form.monthly_amount} onChange={(e) => setForm((f) => ({ ...f, monthly_amount: e.target.value }))} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Valor mensal (€)</Label>
+            <Input type="number" step="0.01" value={form.monthly_amount} onChange={(e) => setForm((f) => ({ ...f, monthly_amount: e.target.value }))} />
+          </div>
+          <div className="space-y-2">
+            <Label>Data de início de cobrança</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !billingStartDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {billingStartDate ? format(billingStartDate, "dd/MM/yyyy") : "Cobrança imediata"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={billingStartDate}
+                  onSelect={setBillingStartDate}
+                  disabled={(date) => date < new Date()}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            <p className="text-xs text-muted-foreground">Se em branco, a cobrança começa imediatamente.</p>
+          </div>
         </div>
 
         <div className="space-y-2">
