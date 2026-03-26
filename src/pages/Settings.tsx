@@ -8,8 +8,49 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, Eye, X, Lock } from "lucide-react";
 
 export default function SettingsPage() {
+  const { toast } = useToast();
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Erro", description: "As passwords não coincidem.", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast({ title: "Erro", description: "A password deve ter pelo menos 8 caracteres.", variant: "destructive" });
+      return;
+    }
+    setChangingPassword(true);
+
+    // Verify current password by re-signing in
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user?.email ?? "",
+      password: currentPassword,
+    });
+
+    if (signInError) {
+      toast({ title: "Erro", description: "Password actual incorrecta.", variant: "destructive" });
+      setChangingPassword(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Sucesso", description: "Password alterada com sucesso." });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+    setChangingPassword(false);
+  };
   const activePreview = templatePreviews.find((t) => t.id === previewId);
 
   return (
