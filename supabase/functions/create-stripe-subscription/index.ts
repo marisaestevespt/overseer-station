@@ -31,7 +31,7 @@ serve(async (req) => {
   );
 
   try {
-    const { instanceId } = await req.json();
+    const { instanceId, billingStartDate } = await req.json();
     if (!instanceId) throw new Error("instanceId is required");
 
     log("Creating subscription for instance", { instanceId });
@@ -65,7 +65,7 @@ serve(async (req) => {
     }
 
     // Create subscription with SEPA as default payment method type
-    const subscription = await stripe.subscriptions.create({
+    const subscriptionParams: any = {
       customer: customer.id,
       items: [{ price: priceId }],
       payment_behavior: "default_incomplete",
@@ -75,7 +75,17 @@ serve(async (req) => {
       },
       expand: ["latest_invoice.confirmation_secret", "pending_setup_intent"],
       metadata: { instance_id: instanceId },
-    });
+    };
+
+    // If billing_start_date is set, use billing_cycle_anchor
+    if (billingStartDate) {
+      const anchorTimestamp = Math.floor(new Date(billingStartDate).getTime() / 1000);
+      subscriptionParams.billing_cycle_anchor = anchorTimestamp;
+      subscriptionParams.proration_behavior = "none";
+      log("Using billing_cycle_anchor", { billingStartDate, anchorTimestamp });
+    }
+
+    const subscription = await stripe.subscriptions.create(subscriptionParams);
 
     log("Stripe subscription created", { subscriptionId: subscription.id });
 
@@ -124,6 +134,7 @@ serve(async (req) => {
         monthly_amount: monthlyAmount,
         plan: "standard",
         current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        billing_start_date: billingStartDate || null,
       }).eq("id", existingSub.id);
     } else {
       await supabase.from("subscriptions").insert({
@@ -134,6 +145,7 @@ serve(async (req) => {
         monthly_amount: monthlyAmount,
         plan: "standard",
         current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        billing_start_date: billingStartDate || null,
       });
     }
 

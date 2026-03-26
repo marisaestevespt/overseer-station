@@ -4,11 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, ExternalLink, Copy, RefreshCw, Check, Pencil, CreditCard, X } from "lucide-react";
+import { ArrowLeft, ExternalLink, Copy, RefreshCw, Check, Pencil, CreditCard, X, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
 
 type Instance = Database["public"]["Tables"]["instances"]["Row"];
@@ -105,8 +108,10 @@ export default function InstanceDetail() {
     if (!instance) return;
     setCreatingSubscription(true);
     try {
+      // Get billing_start_date from subscription if it exists
+      const billingStartDate = (subscription as any)?.billing_start_date || null;
       const { data, error } = await supabase.functions.invoke("create-stripe-subscription", {
-        body: { instanceId: instance.id },
+        body: { instanceId: instance.id, billingStartDate },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -249,6 +254,41 @@ export default function InstanceDetail() {
               <span className="text-sm text-muted-foreground">Plano</span>
               <span className="text-sm">{subscription.plan}</span>
             </div>
+            {(subscription as any).billing_start_date && (
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Cobrança começa em</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">{format(new Date((subscription as any).billing_start_date), "dd/MM/yyyy")}</span>
+                  {/* Allow editing only if no stripe_subscription_id yet (not yet billed) */}
+                  {!subscription.stripe_subscription_id && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                          mode="single"
+                          selected={new Date((subscription as any).billing_start_date)}
+                          onSelect={async (date) => {
+                            if (!date) return;
+                            await supabase.from("subscriptions").update({
+                              billing_start_date: date.toISOString(),
+                            } as any).eq("id", subscription.id);
+                            toast({ title: "Data de cobrança actualizada" });
+                            fetchData();
+                          }}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
+              </div>
+            )}
             {subscription.stripe_subscription_id && (
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Stripe ID</span>
