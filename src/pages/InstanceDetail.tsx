@@ -108,8 +108,10 @@ export default function InstanceDetail() {
     if (!instance) return;
     setCreatingSubscription(true);
     try {
+      // Get billing_start_date from subscription if it exists
+      const billingStartDate = (subscription as any)?.billing_start_date || null;
       const { data, error } = await supabase.functions.invoke("create-stripe-subscription", {
-        body: { instanceId: instance.id },
+        body: { instanceId: instance.id, billingStartDate },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
