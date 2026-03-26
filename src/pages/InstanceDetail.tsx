@@ -268,12 +268,10 @@ export default function InstanceDetail() {
             </Button>
           ) : (
             <>
-              {subscription.status !== "cancelled" && (
-                <Button size="sm" variant="destructive" onClick={cancelStripeSubscription} disabled={cancellingSubscription}>
-                  <X className="mr-2 h-3 w-3" />
-                  {cancellingSubscription ? "A cancelar..." : "Cancelar Subscrição"}
-                </Button>
-              )}
+              <Button size="sm" variant="destructive" onClick={cancelStripeSubscription} disabled={cancellingSubscription}>
+                <X className="mr-2 h-3 w-3" />
+                {cancellingSubscription ? "A cancelar..." : "Cancelar Subscrição"}
+              </Button>
               {stripeCustomerUrl && (
                 <Button size="sm" variant="outline" asChild>
                   <a href={stripeCustomerUrl} target="_blank" rel="noopener noreferrer">
