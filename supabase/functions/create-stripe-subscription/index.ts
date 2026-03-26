@@ -134,6 +134,7 @@ serve(async (req) => {
         monthly_amount: monthlyAmount,
         plan: "standard",
         current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        billing_start_date: billingStartDate || null,
       }).eq("id", existingSub.id);
     } else {
       await supabase.from("subscriptions").insert({
@@ -144,6 +145,7 @@ serve(async (req) => {
         monthly_amount: monthlyAmount,
         plan: "standard",
         current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        billing_start_date: billingStartDate || null,
       });
     }
 
