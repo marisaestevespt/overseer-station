@@ -64,6 +64,32 @@ export default function SettingsPage() {
         </p>
       </div>
 
+
+      {/* Alterar Password */}
+      <div className="glass-card p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Lock className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold font-heading">Alterar Password</h2>
+        </div>
+        <form onSubmit={handleChangePassword} className="space-y-4 max-w-sm">
+          <div className="space-y-2">
+            <Label htmlFor="current-password">Password actual</Label>
+            <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required autoComplete="current-password" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="new-password">Nova password</Label>
+            <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required autoComplete="new-password" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirm-password">Confirmar nova password</Label>
+            <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password" />
+          </div>
+          <Button type="submit" disabled={changingPassword}>
+            {changingPassword ? "A alterar..." : "Alterar password"}
+          </Button>
+        </form>
+      </div>
+
       {/* Email Templates */}
       <div className="glass-card p-6">
         <div className="flex items-center gap-2 mb-4">
