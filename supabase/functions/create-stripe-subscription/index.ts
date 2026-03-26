@@ -65,7 +65,7 @@ serve(async (req) => {
     }
 
     // Create subscription with SEPA as default payment method type
-    const subscription = await stripe.subscriptions.create({
+    const subscriptionParams: any = {
       customer: customer.id,
       items: [{ price: priceId }],
       payment_behavior: "default_incomplete",
@@ -75,7 +75,17 @@ serve(async (req) => {
       },
       expand: ["latest_invoice.confirmation_secret", "pending_setup_intent"],
       metadata: { instance_id: instanceId },
-    });
+    };
+
+    // If billing_start_date is set, use billing_cycle_anchor
+    if (billingStartDate) {
+      const anchorTimestamp = Math.floor(new Date(billingStartDate).getTime() / 1000);
+      subscriptionParams.billing_cycle_anchor = anchorTimestamp;
+      subscriptionParams.proration_behavior = "none";
+      log("Using billing_cycle_anchor", { billingStartDate, anchorTimestamp });
+    }
+
+    const subscription = await stripe.subscriptions.create(subscriptionParams);
 
     log("Stripe subscription created", { subscriptionId: subscription.id });
 
