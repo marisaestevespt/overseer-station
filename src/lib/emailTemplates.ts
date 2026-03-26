@@ -2,6 +2,7 @@
 // All templates follow the brand identity: bordeaux header, bege body, warm footer
 
 const SYSTEM_NAME = "Marisa Esteves";
+const TEAM_NAME = "Equipa Marisa Esteves";
 
 interface WelcomeEmailData {
   ownerName: string;

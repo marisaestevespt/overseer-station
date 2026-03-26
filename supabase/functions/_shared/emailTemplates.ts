@@ -2,6 +2,7 @@
 // Brand: bordeaux header, bege body, warm footer
 
 const SYSTEM_NAME = Deno.env.get("SYSTEM_NAME") || "Marisa Esteves";
+const TEAM_NAME = "Equipa Marisa Esteves";
 
 function baseLayout(content: string, systemName: string = SYSTEM_NAME): string {
   return `<!DOCTYPE html>
@@ -59,9 +60,8 @@ export function welcomeEmail(ownerName: string, businessName: string, instanceUr
     ${btn("Aceder ao meu sistema", instanceUrl)}
     <p style="${ts("font-size: 13px; color: #8b5e3c;")}">Se tiveres alguma questão, responde a este email.</p>
     ${divider}
-    <p style="${ts("font-size: 14px;")}">Até já,<br/><strong>${sn}</strong></p>
+    <p style="${ts("font-size: 14px;")}">Até já,<br/><strong>${TEAM_NAME}</strong></p>
   `, sn);
-}
 
 export function sepaSetupEmail(ownerName: string, setupUrl: string): string {
   const sn = SYSTEM_NAME;
@@ -73,9 +73,8 @@ export function sepaSetupEmail(ownerName: string, setupUrl: string): string {
     ${btn("Autorizar débito directo", setupUrl)}
     <p style="${ts()}">Após a autorização, os pagamentos mensais serão processados automaticamente. Não precisas de fazer nada mais.</p>
     ${divider}
-    <p style="${ts("font-size: 14px;")}">Até já,<br/><strong>${sn}</strong></p>
+    <p style="${ts("font-size: 14px;")}">Até já,<br/><strong>${TEAM_NAME}</strong></p>
   `, sn);
-}
 
 export function paymentFailedEmail(ownerName: string, monthYear: string, updatePaymentUrl: string): string {
   const sn = SYSTEM_NAME;
@@ -87,9 +86,8 @@ export function paymentFailedEmail(ownerName: string, monthYear: string, updateP
     ${btn("Actualizar método de pagamento", updatePaymentUrl)}
     <p style="${ts("font-size: 13px; color: #8b5e3c;")}">Se precisares de ajuda, responde a este email.</p>
     ${divider}
-    <p style="${ts("font-size: 14px;")}">Até já,<br/><strong>${sn}</strong></p>
+    <p style="${ts("font-size: 14px;")}">Até já,<br/><strong>${TEAM_NAME}</strong></p>
   `, sn);
-}
 
 export function renewalReminderEmail(ownerName: string, renewalDate: string, amount: string): string {
   const sn = SYSTEM_NAME;
@@ -100,6 +98,5 @@ export function renewalReminderEmail(ownerName: string, renewalDate: string, amo
     <p style="${ts()}">O pagamento será processado automaticamente por débito directo — não precisas de fazer nada.</p>
     <p style="${ts("font-size: 13px; color: #8b5e3c;")}">Se tiveres alguma questão, responde a este email.</p>
     ${divider}
-    <p style="${ts("font-size: 14px;")}">Até já,<br/><strong>${sn}</strong></p>
+    <p style="${ts("font-size: 14px;")}">Até já,<br/><strong>${TEAM_NAME}</strong></p>
   `, sn);
-}
