@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { sepaSetupEmail } from "../_shared/emailTemplates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -157,30 +158,7 @@ serve(async (req) => {
             from: "onboarding@resend.dev",
             to: [instance.owner_email],
             subject: "Configura o teu método de pagamento",
-            html: `
-              <div style="font-family: 'DM Sans', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h1 style="color: #6e1f2b; font-family: 'Cormorant Garamond', serif;">Olá ${instance.owner_name},</h1>
-                <p style="color: #2a2a2a; line-height: 1.6;">
-                  A tua subscrição para <strong>${instance.business_name}</strong> foi criada com sucesso.
-                </p>
-                <p style="color: #2a2a2a; line-height: 1.6;">
-                  Para activar o débito directo SEPA, precisamos que configures o teu método de pagamento. 
-                  Clica no botão abaixo para introduzir o teu IBAN e autorizar o débito directo.
-                </p>
-                <div style="text-align: center; margin: 30px 0;">
-                  <a href="${setupUrl}" style="background-color: #6e1f2b; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
-                    Configurar Método de Pagamento
-                  </a>
-                </div>
-                <p style="color: #8b5e3c; font-size: 14px; line-height: 1.6;">
-                  Este link é seguro e leva-te directamente à página de configuração do débito directo SEPA via Stripe.
-                </p>
-                <hr style="border: none; border-top: 1px solid #d8a3a0; margin: 30px 0;" />
-                <p style="color: #999; font-size: 12px;">
-                  Se tiveres alguma dúvida, responde directamente a este email.
-                </p>
-              </div>
-            `,
+            html: sepaSetupEmail(instance.owner_name, setupUrl),
           }),
         });
 

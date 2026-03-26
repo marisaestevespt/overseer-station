@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { paymentFailedEmail } from "../_shared/emailTemplates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -152,6 +153,49 @@ serve(async (req) => {
             details: `Motivo: ${invoice.attempt_count} tentativa(s)`,
             performed_by: "stripe-webhook",
           });
+
+          // Send payment failed email
+          const resendKey = Deno.env.get("RESEND_API_KEY");
+          if (resendKey) {
+            try {
+              const { data: inst } = await supabase.from("instances").select("owner_name, owner_email").eq("id", subRecord.instance_id).single();
+              if (inst) {
+                const now = new Date();
+                const monthYear = `${now.toLocaleString("pt-PT", { month: "long" })} ${now.getFullYear()}`;
+                const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+                let updateUrl = "#";
+                if (customerId) {
+                  try {
+                    const portalSession = await stripe.billingPortal.sessions.create({
+                      customer: customerId,
+                      return_url: "https://example.com",
+                    });
+                    updateUrl = portalSession.url;
+                  } catch (_) { /* ignore */ }
+                }
+
+                await fetch("https://api.resend.com/emails", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${resendKey}` },
+                  body: JSON.stringify({
+                    from: "onboarding@resend.dev",
+                    to: [inst.owner_email],
+                    subject: "Problema com o teu pagamento",
+                    html: paymentFailedEmail(inst.owner_name, monthYear, updateUrl),
+                  }),
+                });
+
+                await supabase.from("activity_log").insert({
+                  instance_id: subRecord.instance_id,
+                  action: "Email de pagamento falhado enviado",
+                  details: `Enviado para ${inst.owner_email}`,
+                  performed_by: "stripe-webhook",
+                });
+              }
+            } catch (emailErr) {
+              log("Failed to send payment failed email", { error: String(emailErr) });
+            }
+          }
         }
         break;
       }
