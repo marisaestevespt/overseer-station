@@ -62,6 +62,7 @@ export function welcomeEmail(ownerName: string, businessName: string, instanceUr
     ${divider}
     <p style="${ts("font-size: 14px;")}">Até já,<br/><strong>${TEAM_NAME}</strong></p>
   `, sn);
+}
 
 export function sepaSetupEmail(ownerName: string, setupUrl: string): string {
   const sn = SYSTEM_NAME;
@@ -75,6 +76,7 @@ export function sepaSetupEmail(ownerName: string, setupUrl: string): string {
     ${divider}
     <p style="${ts("font-size: 14px;")}">Até já,<br/><strong>${TEAM_NAME}</strong></p>
   `, sn);
+}
 
 export function paymentFailedEmail(ownerName: string, monthYear: string, updatePaymentUrl: string): string {
   const sn = SYSTEM_NAME;
@@ -88,6 +90,7 @@ export function paymentFailedEmail(ownerName: string, monthYear: string, updateP
     ${divider}
     <p style="${ts("font-size: 14px;")}">Até já,<br/><strong>${TEAM_NAME}</strong></p>
   `, sn);
+}
 
 export function renewalReminderEmail(ownerName: string, renewalDate: string, amount: string): string {
   const sn = SYSTEM_NAME;
@@ -100,3 +103,4 @@ export function renewalReminderEmail(ownerName: string, renewalDate: string, amo
     ${divider}
     <p style="${ts("font-size: 14px;")}">Até já,<br/><strong>${TEAM_NAME}</strong></p>
   `, sn);
+}
