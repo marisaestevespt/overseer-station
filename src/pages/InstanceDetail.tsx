@@ -261,7 +261,7 @@ export default function InstanceDetail() {
         )}
 
         <div className="flex flex-wrap gap-2 mt-4">
-          {!subscription || subscription.status === "cancelled" ? (
+          {!subscription || (subscription.status as string) === "cancelled" ? (
             <Button size="sm" onClick={createStripeSubscription} disabled={creatingSubscription}>
               <CreditCard className="mr-2 h-3 w-3" />
               {creatingSubscription ? "A criar..." : "Criar Subscrição Stripe"}
