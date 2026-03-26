@@ -23,6 +23,13 @@ interface PaymentFailedEmailData {
   systemName?: string;
 }
 
+interface RenewalReminderEmailData {
+  ownerName: string;
+  renewalDate: string;
+  amount: string;
+  systemName?: string;
+}
+
 function baseLayout(content: string, systemName: string = SYSTEM_NAME): string {
   return `
 <!DOCTYPE html>
@@ -140,6 +147,26 @@ export function paymentFailedEmailHtml(data: PaymentFailedEmailData): string {
   return baseLayout(content, sn);
 }
 
+export function renewalReminderEmailHtml(data: RenewalReminderEmailData): string {
+  const sn = data.systemName || SYSTEM_NAME;
+  const content = `
+    <p style="${textStyle("font-size: 18px; font-weight: 500;")}">Olá ${data.ownerName},</p>
+    <p style="${textStyle("font-size: 17px; font-weight: 600; color: #6e1f2b;")}">A tua subscrição renova em breve.</p>
+    <p style="${textStyle()}">
+      A tua subscrição mensal do <strong>${sn}</strong> será renovada a <strong>${data.renewalDate}</strong> no valor de <strong>${data.amount}€</strong>.
+    </p>
+    <p style="${textStyle()}">
+      O pagamento será processado automaticamente por débito directo — não precisas de fazer nada.
+    </p>
+    <p style="${textStyle("font-size: 13px; color: #8b5e3c;")}">
+      Se tiveres alguma questão, responde a este email.
+    </p>
+    <hr style="border: none; border-top: 1px solid #d8a3a0; margin: 24px 0;" />
+    <p style="${textStyle("font-size: 14px;")}">Até já,<br/><strong>${sn}</strong></p>
+  `;
+  return baseLayout(content, sn);
+}
+
 // Preview data for Settings page
 export const templatePreviews = [
   {
@@ -169,6 +196,16 @@ export const templatePreviews = [
       ownerName: "Maria Santos",
       monthYear: "Março 2026",
       updatePaymentUrl: "https://billing.stripe.com/p/example",
+    }),
+  },
+  {
+    id: "renewal-reminder",
+    name: "Aviso de Renovação",
+    description: "Enviado 7 dias antes da renovação automática da subscrição.",
+    html: renewalReminderEmailHtml({
+      ownerName: "Maria Santos",
+      renewalDate: "2 de Abril de 2026",
+      amount: "49",
     }),
   },
 ];
