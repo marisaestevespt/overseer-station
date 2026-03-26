@@ -1,11 +1,56 @@
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { templatePreviews } from "@/lib/emailTemplates";
 import { Button } from "@/components/ui/button";
-import { Mail, Eye, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { Mail, Eye, X, Lock } from "lucide-react";
 
 export default function SettingsPage() {
+  const { toast } = useToast();
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Erro", description: "As passwords não coincidem.", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast({ title: "Erro", description: "A password deve ter pelo menos 8 caracteres.", variant: "destructive" });
+      return;
+    }
+    setChangingPassword(true);
+
+    // Verify current password by re-signing in
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user?.email ?? "",
+      password: currentPassword,
+    });
+
+    if (signInError) {
+      toast({ title: "Erro", description: "Password actual incorrecta.", variant: "destructive" });
+      setChangingPassword(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Sucesso", description: "Password alterada com sucesso." });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+    setChangingPassword(false);
+  };
   const activePreview = templatePreviews.find((t) => t.id === previewId);
 
   return (
@@ -17,6 +62,32 @@ export default function SettingsPage() {
         <p className="text-muted-foreground text-sm">
           Configurações do painel de administração. As variáveis de ambiente (Stripe, Resend, etc.) devem ser configuradas no Lovable Cloud.
         </p>
+      </div>
+
+
+      {/* Alterar Password */}
+      <div className="glass-card p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Lock className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold font-heading">Alterar Password</h2>
+        </div>
+        <form onSubmit={handleChangePassword} className="space-y-4 max-w-sm">
+          <div className="space-y-2">
+            <Label htmlFor="current-password">Password actual</Label>
+            <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required autoComplete="current-password" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="new-password">Nova password</Label>
+            <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required autoComplete="new-password" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirm-password">Confirmar nova password</Label>
+            <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password" />
+          </div>
+          <Button type="submit" disabled={changingPassword}>
+            {changingPassword ? "A alterar..." : "Alterar password"}
+          </Button>
+        </form>
       </div>
 
       {/* Email Templates */}
