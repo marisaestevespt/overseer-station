@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, ExternalLink, Copy, RefreshCw, Check, Pencil } from "lucide-react";
+import { ArrowLeft, ExternalLink, Copy, RefreshCw, Check, Pencil, CreditCard, X } from "lucide-react";
 import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -26,6 +26,8 @@ export default function InstanceDetail() {
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [checkingHealth, setCheckingHealth] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [creatingSubscription, setCreatingSubscription] = useState(false);
+  const [cancellingSubscription, setCancellingSubscription] = useState(false);
 
   useEffect(() => {
     if (id) fetchData();
@@ -99,6 +101,52 @@ export default function InstanceDetail() {
     setCheckingHealth(false);
   }
 
+  async function createStripeSubscription() {
+    if (!instance) return;
+    setCreatingSubscription(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-stripe-subscription", {
+        body: { instanceId: instance.id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Subscrição criada com sucesso",
+        description: data?.setupUrl ? "Link de setup SEPA enviado por email." : "Subscrição activada.",
+      });
+
+      if (data?.setupUrl) {
+        window.open(data.setupUrl, "_blank");
+      }
+
+      fetchData();
+    } catch (err) {
+      toast({ title: "Erro ao criar subscrição", description: String(err), variant: "destructive" });
+    }
+    setCreatingSubscription(false);
+  }
+
+  async function cancelStripeSubscription() {
+    if (!instance || !subscription?.stripe_subscription_id) return;
+    if (!confirm("Tens a certeza que queres cancelar esta subscrição? Esta acção não pode ser revertida.")) return;
+
+    setCancellingSubscription(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("cancel-stripe-subscription", {
+        body: { instanceId: instance.id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({ title: "Subscrição cancelada" });
+      fetchData();
+    } catch (err) {
+      toast({ title: "Erro ao cancelar", description: String(err), variant: "destructive" });
+    }
+    setCancellingSubscription(false);
+  }
+
   function copyUrl() {
     if (instance?.instance_url) {
       navigator.clipboard.writeText(instance.instance_url);
@@ -139,19 +187,23 @@ export default function InstanceDetail() {
     </div>
   );
 
+  const stripeCustomerUrl = subscription?.stripe_customer_id
+    ? `https://dashboard.stripe.com/customers/${subscription.stripe_customer_id}`
+    : null;
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-2xl font-bold">{instance.business_name}</h1>
+        <h1 className="text-2xl font-bold font-heading">{instance.business_name}</h1>
         <StatusBadge status={instance.status} />
       </div>
 
       {/* General Info */}
       <div className="glass-card p-5">
-        <h2 className="text-lg font-semibold mb-3">Informação Geral</h2>
+        <h2 className="text-lg font-semibold mb-3 font-heading">Informação Geral</h2>
         {editableField("Nome do negócio", "business_name")}
         {editableField("Owner", "owner_name")}
         {editableField("Email", "owner_email")}
@@ -176,9 +228,9 @@ export default function InstanceDetail() {
         </div>
       </div>
 
-      {/* Subscription */}
+      {/* Stripe Subscription */}
       <div className="glass-card p-5">
-        <h2 className="text-lg font-semibold mb-3">Subscrição</h2>
+        <h2 className="text-lg font-semibold mb-3 font-heading">Subscrição Stripe</h2>
         {subscription ? (
           <div className="space-y-2">
             <div className="flex justify-between">
@@ -197,12 +249,45 @@ export default function InstanceDetail() {
               <span className="text-sm text-muted-foreground">Plano</span>
               <span className="text-sm">{subscription.plan}</span>
             </div>
+            {subscription.stripe_subscription_id && (
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Stripe ID</span>
+                <span className="text-sm font-mono text-xs">{subscription.stripe_subscription_id}</span>
+              </div>
+            )}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">Sem subscrição associada</p>
         )}
 
-        <div className="flex gap-2 mt-4">
+        <div className="flex flex-wrap gap-2 mt-4">
+          {!subscription || subscription.status === "cancelled" ? (
+            <Button size="sm" onClick={createStripeSubscription} disabled={creatingSubscription}>
+              <CreditCard className="mr-2 h-3 w-3" />
+              {creatingSubscription ? "A criar..." : "Criar Subscrição Stripe"}
+            </Button>
+          ) : (
+            <>
+              {subscription.status !== "cancelled" && (
+                <Button size="sm" variant="destructive" onClick={cancelStripeSubscription} disabled={cancellingSubscription}>
+                  <X className="mr-2 h-3 w-3" />
+                  {cancellingSubscription ? "A cancelar..." : "Cancelar Subscrição"}
+                </Button>
+              )}
+              {stripeCustomerUrl && (
+                <Button size="sm" variant="outline" asChild>
+                  <a href={stripeCustomerUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2 h-3 w-3" />
+                    Ver no Stripe
+                  </a>
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Status actions */}
+        <div className="flex gap-2 mt-4 border-t border-border/50 pt-4">
           {instance.status === "active" && (
             <Button variant="outline" size="sm" onClick={() => updateStatus("suspended")}>Suspender</Button>
           )}
@@ -217,7 +302,7 @@ export default function InstanceDetail() {
 
       {/* Health Check */}
       <div className="glass-card p-5">
-        <h2 className="text-lg font-semibold mb-3">Health Check</h2>
+        <h2 className="text-lg font-semibold mb-3 font-heading">Health Check</h2>
         <div className="flex items-center justify-between mb-3">
           <div>
             <div className="flex items-center gap-2">
@@ -237,7 +322,7 @@ export default function InstanceDetail() {
 
       {/* Activity Log */}
       <div className="glass-card p-5">
-        <h2 className="text-lg font-semibold mb-3">Histórico de Actividade</h2>
+        <h2 className="text-lg font-semibold mb-3 font-heading">Histórico de Actividade</h2>
         {activities.length === 0 ? (
           <p className="text-sm text-muted-foreground">Sem actividade registada</p>
         ) : (
