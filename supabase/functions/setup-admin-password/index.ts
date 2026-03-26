@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,24 +8,25 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    { auth: { persistSession: false } }
-  );
-
   try {
     const { userId, password } = await req.json();
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-    // Confirm email and set password
-    const { data, error } = await supabase.auth.admin.updateUser(userId, {
-      email_confirm: true,
-      password: password,
+    const res = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${serviceRoleKey}`,
+        "apikey": serviceRoleKey,
+      },
+      body: JSON.stringify({ email_confirm: true, password }),
     });
 
-    if (error) throw error;
+    const data = await res.json();
+    if (!res.ok) throw new Error(JSON.stringify(data));
 
-    return new Response(JSON.stringify({ success: true, email: data.user?.email }), {
+    return new Response(JSON.stringify({ success: true, email: data.email }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
