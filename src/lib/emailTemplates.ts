@@ -100,7 +100,7 @@ export function welcomeEmailHtml(data: WelcomeEmailData): string {
       Se tiveres alguma questão, responde a este email.
     </p>
     <hr style="border: none; border-top: 1px solid #d8a3a0; margin: 24px 0;" />
-    <p style="${textStyle("font-size: 14px;")}">Até já,<br/><strong>${sn}</strong></p>
+    <p style="${textStyle("font-size: 14px;")}">Até já,<br/><strong>${TEAM_NAME}</strong></p>
   `;
   return baseLayout(content, sn);
 }
@@ -121,7 +121,7 @@ export function sepaSetupEmailHtml(data: SepaSetupEmailData): string {
       Após a autorização, os pagamentos mensais serão processados automaticamente. Não precisas de fazer nada mais.
     </p>
     <hr style="border: none; border-top: 1px solid #d8a3a0; margin: 24px 0;" />
-    <p style="${textStyle("font-size: 14px;")}">Até já,<br/><strong>${sn}</strong></p>
+    <p style="${textStyle("font-size: 14px;")}">Até já,<br/><strong>${TEAM_NAME}</strong></p>
   `;
   return baseLayout(content, sn);
 }
@@ -143,7 +143,7 @@ export function paymentFailedEmailHtml(data: PaymentFailedEmailData): string {
       Se precisares de ajuda, responde a este email.
     </p>
     <hr style="border: none; border-top: 1px solid #d8a3a0; margin: 24px 0;" />
-    <p style="${textStyle("font-size: 14px;")}">Até já,<br/><strong>${sn}</strong></p>
+    <p style="${textStyle("font-size: 14px;")}">Até já,<br/><strong>${TEAM_NAME}</strong></p>
   `;
   return baseLayout(content, sn);
 }
@@ -163,7 +163,7 @@ export function renewalReminderEmailHtml(data: RenewalReminderEmailData): string
       Se tiveres alguma questão, responde a este email.
     </p>
     <hr style="border: none; border-top: 1px solid #d8a3a0; margin: 24px 0;" />
-    <p style="${textStyle("font-size: 14px;")}">Até já,<br/><strong>${sn}</strong></p>
+    <p style="${textStyle("font-size: 14px;")}">Até já,<br/><strong>${TEAM_NAME}</strong></p>
   `;
   return baseLayout(content, sn);
 }
