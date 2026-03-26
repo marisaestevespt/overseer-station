@@ -90,3 +90,16 @@ export function paymentFailedEmail(ownerName: string, monthYear: string, updateP
     <p style="${ts("font-size: 14px;")}">Até já,<br/><strong>${sn}</strong></p>
   `, sn);
 }
+
+export function renewalReminderEmail(ownerName: string, renewalDate: string, amount: string): string {
+  const sn = SYSTEM_NAME;
+  return baseLayout(`
+    <p style="${ts("font-size: 18px; font-weight: 500;")}">Olá ${ownerName},</p>
+    <p style="${ts("font-size: 17px; font-weight: 600; color: #6e1f2b;")}">A tua subscrição renova em breve.</p>
+    <p style="${ts()}">A tua subscrição mensal do <strong>${sn}</strong> será renovada a <strong>${renewalDate}</strong> no valor de <strong>${amount}€</strong>.</p>
+    <p style="${ts()}">O pagamento será processado automaticamente por débito directo — não precisas de fazer nada.</p>
+    <p style="${ts("font-size: 13px; color: #8b5e3c;")}">Se tiveres alguma questão, responde a este email.</p>
+    ${divider}
+    <p style="${ts("font-size: 14px;")}">Até já,<br/><strong>${sn}</strong></p>
+  `, sn);
+}
