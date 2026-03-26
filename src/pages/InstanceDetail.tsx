@@ -254,6 +254,41 @@ export default function InstanceDetail() {
               <span className="text-sm text-muted-foreground">Plano</span>
               <span className="text-sm">{subscription.plan}</span>
             </div>
+            {(subscription as any).billing_start_date && (
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Cobrança começa em</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">{format(new Date((subscription as any).billing_start_date), "dd/MM/yyyy")}</span>
+                  {/* Allow editing only if no stripe_subscription_id yet (not yet billed) */}
+                  {!subscription.stripe_subscription_id && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                          mode="single"
+                          selected={new Date((subscription as any).billing_start_date)}
+                          onSelect={async (date) => {
+                            if (!date) return;
+                            await supabase.from("subscriptions").update({
+                              billing_start_date: date.toISOString(),
+                            } as any).eq("id", subscription.id);
+                            toast({ title: "Data de cobrança actualizada" });
+                            fetchData();
+                          }}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
+              </div>
+            )}
             {subscription.stripe_subscription_id && (
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Stripe ID</span>
