@@ -7,10 +7,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+
+const SECTORS = [
+  "Serviços Digitais",
+  "Saúde & Bem-estar",
+  "Educação & Formação",
+  "Criativo & Produção",
+  "Consultoria & Jurídico",
+  "Oficina & Automóvel",
+] as const;
 
 export default function NewInstance() {
   const navigate = useNavigate();
@@ -25,6 +35,7 @@ export default function NewInstance() {
     health_check_url: "",
     monthly_amount: "",
     notes: "",
+    sector: "",
   });
 
   const handleUrlChange = (url: string) => {
@@ -49,7 +60,8 @@ export default function NewInstance() {
         health_check_url: form.health_check_url || null,
         notes: form.notes || null,
         status: "setup",
-      })
+        sector: form.sector || null,
+      } as any)
       .select()
       .single();
 
@@ -103,9 +115,25 @@ export default function NewInstance() {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label>Email do owner *</Label>
-          <Input type="email" value={form.owner_email} onChange={(e) => setForm((f) => ({ ...f, owner_email: e.target.value }))} required />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Email do owner *</Label>
+            <Input type="email" value={form.owner_email} onChange={(e) => setForm((f) => ({ ...f, owner_email: e.target.value }))} required />
+          </div>
+          <div className="space-y-2">
+            <Label>Setor de atividade</Label>
+            <Select value={form.sector} onValueChange={(v) => setForm((f) => ({ ...f, sector: v }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar setor..." />
+              </SelectTrigger>
+              <SelectContent>
+                {SECTORS.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="space-y-2">

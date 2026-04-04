@@ -53,48 +53,60 @@ export type Database = {
         Row: {
           business_name: string
           created_at: string
+          current_version: string | null
           first_login_at: string | null
+          github_repo: string | null
           health_check_url: string | null
           health_status: Database["public"]["Enums"]["health_status"]
           id: string
           instance_url: string | null
           invite_sent_at: string | null
           last_health_check: string | null
+          last_update_check: string | null
           notes: string | null
           owner_email: string
           owner_name: string
+          sector: string | null
           status: Database["public"]["Enums"]["instance_status"]
           supabase_project_ref: string | null
         }
         Insert: {
           business_name: string
           created_at?: string
+          current_version?: string | null
           first_login_at?: string | null
+          github_repo?: string | null
           health_check_url?: string | null
           health_status?: Database["public"]["Enums"]["health_status"]
           id?: string
           instance_url?: string | null
           invite_sent_at?: string | null
           last_health_check?: string | null
+          last_update_check?: string | null
           notes?: string | null
           owner_email: string
           owner_name: string
+          sector?: string | null
           status?: Database["public"]["Enums"]["instance_status"]
           supabase_project_ref?: string | null
         }
         Update: {
           business_name?: string
           created_at?: string
+          current_version?: string | null
           first_login_at?: string | null
+          github_repo?: string | null
           health_check_url?: string | null
           health_status?: Database["public"]["Enums"]["health_status"]
           id?: string
           instance_url?: string | null
           invite_sent_at?: string | null
           last_health_check?: string | null
+          last_update_check?: string | null
           notes?: string | null
           owner_email?: string
           owner_name?: string
+          sector?: string | null
           status?: Database["public"]["Enums"]["instance_status"]
           supabase_project_ref?: string | null
         }
