@@ -70,6 +70,54 @@ export type Database = {
         }
         Relationships: []
       }
+      email_settings: {
+        Row: {
+          address: string | null
+          business_hours: string | null
+          business_name: string
+          contact_email: string
+          facebook_url: string | null
+          id: string
+          instagram_url: string | null
+          linkedin_url: string | null
+          logo_url: string | null
+          phone: string | null
+          twitter_url: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          business_hours?: string | null
+          business_name?: string
+          contact_email?: string
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          linkedin_url?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          twitter_url?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          business_hours?: string | null
+          business_name?: string
+          contact_email?: string
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          linkedin_url?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          twitter_url?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       instances: {
         Row: {
           business_name: string
