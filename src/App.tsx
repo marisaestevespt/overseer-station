@@ -11,6 +11,7 @@ import InstanceDetail from "@/pages/InstanceDetail";
 import Subscriptions from "@/pages/Subscriptions";
 import ActivityLogPage from "@/pages/ActivityLog";
 import SettingsPage from "@/pages/Settings";
+import UpdatesPage from "@/pages/Updates";
 import LoginPage from "@/pages/Login";
 import NotFound from "@/pages/NotFound";
 
@@ -41,6 +42,7 @@ function ProtectedRoutes() {
         <Route path="/subscriptions" element={<Subscriptions />} />
         <Route path="/activity" element={<ActivityLogPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/updates" element={<UpdatesPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Server, CreditCard, Activity, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Server, CreditCard, Activity, Settings, LogOut, GitBranch } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +20,7 @@ const navItems = [
   { title: "Instâncias", url: "/instances", icon: Server },
   { title: "Subscrições", url: "/subscriptions", icon: CreditCard },
   { title: "Log de Actividade", url: "/activity", icon: Activity },
+  { title: "Atualizações", url: "/updates", icon: GitBranch },
   { title: "Definições", url: "/settings", icon: Settings },
 ];
 

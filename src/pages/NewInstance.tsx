@@ -85,9 +85,25 @@ export default function NewInstance() {
     await supabase.from("activity_log").insert({
       instance_id: instance.id,
       action: "Instância criada",
-      details: `Negócio: ${form.business_name}, Owner: ${form.owner_name}${billingStartDate ? `, Cobrança a partir de: ${format(billingStartDate, "dd/MM/yyyy")}` : ""}`,
+      details: `Negócio: ${form.business_name}, Owner: ${form.owner_name}, Setor: ${form.sector || "N/A"}${billingStartDate ? `, Cobrança a partir de: ${format(billingStartDate, "dd/MM/yyyy")}` : ""}`,
       performed_by: "admin",
     });
+
+    // Send welcome email if subscription is active
+    if (form.monthly_amount && form.instance_url) {
+      try {
+        await supabase.functions.invoke("send-email", {
+          body: {
+            template: "welcome",
+            instanceId: instance.id,
+            extraData: { instanceUrl: form.instance_url },
+          },
+        });
+        toast({ title: "Email enviado", description: `Email de boas-vindas enviado para ${form.owner_email}.` });
+      } catch {
+        toast({ title: "Aviso", description: "Instância criada mas não foi possível enviar o email de boas-vindas.", variant: "destructive" });
+      }
+    }
 
     toast({ title: "Instância criada", description: `${form.business_name} foi registada com sucesso.` });
     navigate(`/instances/${instance.id}`);
