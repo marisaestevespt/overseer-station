@@ -18,9 +18,9 @@ export default {
       },
     },
     fontFamily: {
-      display: ["var(--font-display)", "'Plus Jakarta Sans'", "system-ui", "sans-serif"],
-      body: ["var(--font-body)", "'Inter'", "system-ui", "sans-serif"],
-      heading: ["var(--font-display)", "'Plus Jakarta Sans'", "system-ui", "sans-serif"],
+      display: ["var(--font-display)", "'Lora'", "Georgia", "serif"],
+      body: ["var(--font-body)", "'DM Sans'", "system-ui", "sans-serif"],
+      heading: ["var(--font-display)", "'Lora'", "Georgia", "serif"],
     },
     extend: {
       colors: {
