@@ -20,6 +20,7 @@ const navItems = [
   { title: "Instâncias", url: "/instances", icon: Server },
   { title: "Subscrições", url: "/subscriptions", icon: CreditCard },
   { title: "Log de Actividade", url: "/activity", icon: Activity },
+  { title: "Atualizações", url: "/updates", icon: GitBranch },
   { title: "Definições", url: "/settings", icon: Settings },
 ];
 

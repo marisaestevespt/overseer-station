@@ -42,6 +42,7 @@ function ProtectedRoutes() {
         <Route path="/subscriptions" element={<Subscriptions />} />
         <Route path="/activity" element={<ActivityLogPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/updates" element={<UpdatesPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
