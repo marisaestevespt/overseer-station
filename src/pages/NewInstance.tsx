@@ -7,10 +7,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+
+const SECTORS = [
+  "Serviços Digitais",
+  "Saúde & Bem-estar",
+  "Educação & Formação",
+  "Criativo & Produção",
+  "Consultoria & Jurídico",
+  "Oficina & Automóvel",
+] as const;
 
 export default function NewInstance() {
   const navigate = useNavigate();
@@ -25,6 +35,7 @@ export default function NewInstance() {
     health_check_url: "",
     monthly_amount: "",
     notes: "",
+    sector: "",
   });
 
   const handleUrlChange = (url: string) => {
