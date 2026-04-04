@@ -173,7 +173,7 @@ export default function UpdatesPage() {
                   return (
                     <TableRow key={inst.id}>
                       <TableCell className="font-medium">{inst.business_name}</TableCell>
-                      <TableCell><StatusBadge status={inst.status} /></TableCell>
+                      <TableCell><StatusBadge status={inst.status as any} /></TableCell>
                       <TableCell>
                         {inst.current_version ? (
                           <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{inst.current_version}</code>
