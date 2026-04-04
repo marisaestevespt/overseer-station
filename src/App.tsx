@@ -11,6 +11,7 @@ import InstanceDetail from "@/pages/InstanceDetail";
 import Subscriptions from "@/pages/Subscriptions";
 import ActivityLogPage from "@/pages/ActivityLog";
 import SettingsPage from "@/pages/Settings";
+import UpdatesPage from "@/pages/Updates";
 import LoginPage from "@/pages/Login";
 import NotFound from "@/pages/NotFound";
 
