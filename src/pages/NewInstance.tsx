@@ -115,9 +115,25 @@ export default function NewInstance() {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label>Email do owner *</Label>
-          <Input type="email" value={form.owner_email} onChange={(e) => setForm((f) => ({ ...f, owner_email: e.target.value }))} required />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Email do owner *</Label>
+            <Input type="email" value={form.owner_email} onChange={(e) => setForm((f) => ({ ...f, owner_email: e.target.value }))} required />
+          </div>
+          <div className="space-y-2">
+            <Label>Setor de atividade</Label>
+            <Select value={form.sector} onValueChange={(v) => setForm((f) => ({ ...f, sector: v }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar setor..." />
+              </SelectTrigger>
+              <SelectContent>
+                {SECTORS.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="space-y-2">
