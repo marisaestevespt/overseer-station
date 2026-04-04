@@ -60,7 +60,8 @@ export default function NewInstance() {
         health_check_url: form.health_check_url || null,
         notes: form.notes || null,
         status: "setup",
-      })
+        sector: form.sector || null,
+      } as any)
       .select()
       .single();
 
