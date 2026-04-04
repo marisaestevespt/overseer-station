@@ -142,7 +142,7 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display), 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: var(--font-display), 'Lora', Georgia, serif;
     letter-spacing: -0.025em;
   }
 
