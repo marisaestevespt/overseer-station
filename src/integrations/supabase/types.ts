@@ -20,24 +20,42 @@ export type Database = {
           created_at: string
           details: string | null
           id: string
-          instance_id: string
+          instance_id: string | null
+          ip: string | null
+          metadata: Json | null
           performed_by: string
+          target_id: string | null
+          target_type: string | null
+          user_agent: string | null
+          user_id: string | null
         }
         Insert: {
           action: string
           created_at?: string
           details?: string | null
           id?: string
-          instance_id: string
+          instance_id?: string | null
+          ip?: string | null
+          metadata?: Json | null
           performed_by?: string
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Update: {
           action?: string
           created_at?: string
           details?: string | null
           id?: string
-          instance_id?: string
+          instance_id?: string | null
+          ip?: string | null
+          metadata?: Json | null
           performed_by?: string
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -181,6 +199,30 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          count: number
+          endpoint: string
+          id: string
+          ip: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          endpoint: string
+          id?: string
+          ip: string
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          endpoint?: string
+          id?: string
+          ip?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           billing_start_date: string | null
@@ -231,14 +273,42 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "super_admin" | "admin"
       health_status: "ok" | "error" | "unknown"
       instance_status: "active" | "suspended" | "cancelled" | "setup"
       subscription_status: "active" | "past_due" | "cancelled" | "trialing"
@@ -369,6 +439,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["super_admin", "admin"],
       health_status: ["ok", "error", "unknown"],
       instance_status: ["active", "suspended", "cancelled", "setup"],
       subscription_status: ["active", "past_due", "cancelled", "trialing"],
