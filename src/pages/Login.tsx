@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +71,15 @@ export default function LoginPage() {
             <LogIn className="mr-2 h-4 w-4" />
             {loading ? "A entrar..." : "Entrar"}
           </Button>
+
+          <div className="text-center">
+            <Link
+              to="/forgot-password"
+              className="text-xs text-muted-foreground hover:text-primary underline-offset-4 hover:underline"
+            >
+              Esqueci-me da password
+            </Link>
+          </div>
         </form>
       </div>
     </div>
