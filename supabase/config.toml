@@ -1,1 +1,10 @@
 project_id = "xvvgonhbnvrzawnbzofw"
+
+[functions.setup-admin-password]
+verify_jwt = true
+
+[functions.create-admin-user]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false

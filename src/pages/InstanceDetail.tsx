@@ -49,7 +49,7 @@ export default function InstanceDetail() {
   async function saveField(field: string) {
     if (!instance) return;
     const value = editValues[field];
-    const { error } = await supabase.from("instances").update({ [field]: value }).eq("id", instance.id);
+    const { error } = await supabase.from("instances").update({ [field]: value } as Partial<Instance>).eq("id", instance.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
