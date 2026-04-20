@@ -13,6 +13,7 @@ import Subscriptions from "@/pages/Subscriptions";
 import ActivityLogPage from "@/pages/ActivityLog";
 import SettingsPage from "@/pages/Settings";
 import UpdatesPage from "@/pages/Updates";
+import UsersPage from "@/pages/Users";
 import LoginPage from "@/pages/Login";
 import NotFound from "@/pages/NotFound";
 
@@ -34,7 +35,7 @@ function ProtectedRoutes() {
   }
 
   return (
-    <ProtectedRoute requireSuperAdmin>
+    <ProtectedRoute allowedRoles={["super_admin", "admin", "support"]}>
       <AppLayout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
@@ -43,8 +44,23 @@ function ProtectedRoutes() {
           <Route path="/instances/:id" element={<InstanceDetail />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/activity" element={<ActivityLogPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/updates" element={<UpdatesPage />} />
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute allowedRoles={["super_admin"]}>
+                <UsersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute allowedRoles={["super_admin"]}>
+                <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AppLayout>

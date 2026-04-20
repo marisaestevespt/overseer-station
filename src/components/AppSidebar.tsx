@@ -1,7 +1,7 @@
-import { LayoutDashboard, Server, CreditCard, Activity, Settings, LogOut, GitBranch } from "lucide-react";
+import { LayoutDashboard, Server, CreditCard, Activity, Settings, LogOut, GitBranch, Users } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import {
   Sidebar,
   SidebarContent,
@@ -15,19 +15,23 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const navItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Instâncias", url: "/instances", icon: Server },
-  { title: "Subscrições", url: "/subscriptions", icon: CreditCard },
-  { title: "Log de Actividade", url: "/activity", icon: Activity },
-  { title: "Atualizações", url: "/updates", icon: GitBranch },
-  { title: "Definições", url: "/settings", icon: Settings },
+const baseNavItems = [
+  { title: "Dashboard", url: "/", icon: LayoutDashboard, superAdminOnly: false },
+  { title: "Instâncias", url: "/instances", icon: Server, superAdminOnly: false },
+  { title: "Subscrições", url: "/subscriptions", icon: CreditCard, superAdminOnly: false },
+  { title: "Log de Actividade", url: "/activity", icon: Activity, superAdminOnly: false },
+  { title: "Atualizações", url: "/updates", icon: GitBranch, superAdminOnly: false },
+  { title: "Utilizadores", url: "/users", icon: Users, superAdminOnly: true },
+  { title: "Definições", url: "/settings", icon: Settings, superAdminOnly: true },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
+  const { isSuperAdmin } = useUserRole();
+
+  const navItems = baseNavItems.filter((i) => !i.superAdminOnly || isSuperAdmin);
 
   return (
     <Sidebar collapsible="icon">

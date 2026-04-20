@@ -8,3 +8,18 @@ verify_jwt = true
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.invite-user]
+verify_jwt = true
+
+[functions.update-user-role]
+verify_jwt = true
+
+[functions.deactivate-user]
+verify_jwt = true
+
+[functions.reactivate-user]
+verify_jwt = true
+
+[functions.list-users]
+verify_jwt = true
