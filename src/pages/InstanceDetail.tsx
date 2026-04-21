@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,23 +10,31 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, ExternalLink, Copy, RefreshCw, Check, Pencil, CreditCard, X, CalendarIcon } from "lucide-react";
+import { ArrowLeft, ExternalLink, Copy, RefreshCw, Check, Pencil, CreditCard, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
 import { describeEdgeFunctionError } from "@/lib/edgeFunctionError";
+import { useInstance } from "@/hooks/queries/useInstances";
+import { useInstanceActivityLog } from "@/hooks/queries/useActivityLog";
 
 type Instance = Database["public"]["Tables"]["instances"]["Row"];
-type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
-type ActivityLog = Database["public"]["Tables"]["activity_log"]["Row"];
 
 export default function InstanceDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [instance, setInstance] = useState<Instance | null>(null);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const queryClient = useQueryClient();
+  const { data: instanceData } = useInstance(id);
+  const { data: activities = [] } = useInstanceActivityLog(id);
+
+  const instance: Instance | null = instanceData
+    ? ({ ...(instanceData as object), subscriptions: undefined } as unknown as Instance)
+    : null;
+  const subscription = instanceData?.subscriptions && instanceData.subscriptions.length > 0
+    ? instanceData.subscriptions[0]
+    : null;
+
   const [editing, setEditing] = useState<Record<string, boolean>>({});
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [checkingHealth, setCheckingHealth] = useState(false);
@@ -33,44 +42,12 @@ export default function InstanceDetail() {
   const [creatingSubscription, setCreatingSubscription] = useState(false);
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
 
-  useEffect(() => {
-    if (id) fetchData();
-  }, [id]);
-
-  async function fetchData() {
-    try {
-      const { data: inst, error: instError } = await supabase
-        .from("instances").select("*").eq("id", id!).single();
-      if (instError) {
-        toast({ title: "Erro ao carregar instância", description: instError.message, variant: "destructive" });
-        return;
-      }
-
-      const { data: sub, error: subError } = await supabase
-        .from("subscriptions").select("*").eq("instance_id", id!).maybeSingle();
-      if (subError) {
-        toast({ title: "Erro ao carregar subscrição", description: subError.message, variant: "destructive" });
-        return;
-      }
-
-      const { data: logs, error: logsError } = await supabase
-        .from("activity_log").select("*").eq("instance_id", id!).order("created_at", { ascending: false });
-      if (logsError) {
-        toast({ title: "Erro ao carregar histórico", description: logsError.message, variant: "destructive" });
-        return;
-      }
-
-      if (inst) setInstance(inst);
-      if (sub) setSubscription(sub);
-      setActivities(logs || []);
-    } catch (err) {
-      toast({
-        title: "Erro ao carregar instância",
-        description: err instanceof Error ? err.message : "Erro inesperado.",
-        variant: "destructive",
-      });
-    }
-  }
+  const refetchAll = () => {
+    queryClient.invalidateQueries({ queryKey: ["instance", id] });
+    queryClient.invalidateQueries({ queryKey: ["instances"] });
+    queryClient.invalidateQueries({ queryKey: ["activity_log"] });
+    queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+  };
 
   async function saveField(field: string) {
     if (!instance) return;
@@ -79,7 +56,6 @@ export default function InstanceDetail() {
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      setInstance({ ...instance, [field]: value });
       await supabase.from("activity_log").insert({
         instance_id: instance.id,
         action: `Campo "${field}" actualizado`,
@@ -87,6 +63,7 @@ export default function InstanceDetail() {
         performed_by: "admin",
       });
       toast({ title: "Guardado" });
+      refetchAll();
     }
     setEditing({ ...editing, [field]: false });
   }
@@ -99,9 +76,8 @@ export default function InstanceDetail() {
       action: `Status alterado para ${status}`,
       performed_by: "admin",
     });
-    setInstance({ ...instance, status });
     toast({ title: `Status alterado para ${status}` });
-    fetchData();
+    refetchAll();
   }
 
   async function checkHealth() {
@@ -119,13 +95,13 @@ export default function InstanceDetail() {
         details: `HTTP ${res.status}`,
         performed_by: "admin",
       });
-      setInstance({ ...instance, health_status: newStatus, last_health_check: now });
       toast({ title: `Health check: ${newStatus}` });
+      refetchAll();
     } catch {
       const now = new Date().toISOString();
       await supabase.from("instances").update({ health_status: "error", last_health_check: now }).eq("id", instance.id);
-      setInstance({ ...instance, health_status: "error", last_health_check: now });
       toast({ title: "Health check falhou", variant: "destructive" });
+      refetchAll();
     }
     setCheckingHealth(false);
   }
