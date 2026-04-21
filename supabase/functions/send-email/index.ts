@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
-import { welcomeEmail, sepaSetupEmail, paymentFailedEmail, renewalReminderEmail } from "../_shared/emailTemplates.ts";
+import { welcomeEmail, sepaSetupEmail, paymentFailedEmail, renewalReminderEmail, reactivationEmail } from "../_shared/emailTemplates.ts";
 import type { EmailBranding } from "../_shared/emailTemplates.ts";
 import { DEFAULT_BRANDING } from "../_shared/emailTemplates.ts";
 
@@ -95,6 +95,12 @@ serve(async (req) => {
         const amount = extraData?.amount || "0";
         html = renewalReminderEmail(instance.owner_name, renewalDate, amount, branding);
         subject = "A tua subscrição renova em breve";
+        break;
+      }
+      case "reactivation": {
+        const url = instance.instance_url || "#";
+        html = reactivationEmail(instance.owner_name, url, branding);
+        subject = `O teu acesso foi restaurado — ${instance.business_name}`;
         break;
       }
       default:

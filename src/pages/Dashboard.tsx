@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Server, Settings, AlertTriangle, DollarSign, Clock, Plus, ExternalLink, Eye, TrendingUp, TrendingDown, Users } from "lucide-react";
-import { format, subDays, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import { Server, Settings, AlertTriangle, DollarSign, Clock, Plus, ExternalLink, Eye, TrendingUp, TrendingDown, Users, AlertCircle } from "lucide-react";
+import { format, subDays, subMonths, startOfMonth, endOfMonth, differenceInDays } from "date-fns";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useInstances, type InstanceWithSubscriptions } from "@/hooks/queries/useInstances";
 import { CardSkeleton } from "@/components/CardSkeleton";
@@ -64,6 +65,20 @@ export default function Dashboard() {
     }, 0);
     const pastDueCount = instances.filter((i) => i.subscription?.status === "past_due").length;
     return { activeCount, setupCount, errorCount, mrr, pastDueCount };
+  }, [instances]);
+
+  // At-risk instances: past_due, NOT yet suspended, and within suspension window (≤7 days since period_end)
+  const atRiskInstances = useMemo(() => {
+    const now = new Date();
+    return instances
+      .filter((i) => i.subscription?.status === "past_due" && i.status !== "suspended")
+      .map((i) => {
+        const periodEnd = i.subscription?.current_period_end ? new Date(i.subscription.current_period_end) : null;
+        const daysOverdue = periodEnd ? Math.max(0, differenceInDays(now, periodEnd)) : 0;
+        const daysUntilSuspension = Math.max(0, 7 - daysOverdue);
+        return { ...i, daysOverdue, daysUntilSuspension };
+      })
+      .sort((a, b) => a.daysUntilSuspension - b.daysUntilSuspension);
   }, [instances]);
 
   // Advanced metrics
@@ -154,6 +169,39 @@ export default function Dashboard() {
           Nova Instância
         </Button>
       </div>
+
+      {/* At-Risk Alert */}
+      {atRiskInstances.length > 0 && (
+        <Alert variant="destructive" className="border-warning/50 bg-warning/10 text-foreground">
+          <AlertCircle className="h-4 w-4 text-warning" />
+          <AlertTitle className="text-warning">
+            {atRiskInstances.length} {atRiskInstances.length === 1 ? "instância em risco de suspensão" : "instâncias em risco de suspensão"}
+          </AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 space-y-1">
+              {atRiskInstances.slice(0, 5).map((i) => (
+                <button
+                  key={i.id}
+                  onClick={() => navigate(`/instances/${i.id}`)}
+                  className="flex items-center justify-between w-full text-left text-sm py-1 px-2 rounded hover:bg-background/50 transition-colors"
+                >
+                  <span className="font-medium">{i.business_name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {i.daysUntilSuspension === 0
+                      ? "⚠️ Suspensão iminente"
+                      : `Suspensão em ${i.daysUntilSuspension} ${i.daysUntilSuspension === 1 ? "dia" : "dias"} (atrasado há ${i.daysOverdue}d)`}
+                  </span>
+                </button>
+              ))}
+              {atRiskInstances.length > 5 && (
+                <p className="text-xs text-muted-foreground pt-1">
+                  + {atRiskInstances.length - 5} {atRiskInstances.length - 5 === 1 ? "outra" : "outras"}
+                </p>
+              )}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Primary KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
