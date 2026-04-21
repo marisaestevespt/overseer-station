@@ -80,6 +80,7 @@ export default function UsersPage() {
   const [inviteRole, setInviteRole] = useState<AppRole>("support");
   const [inviting, setInviting] = useState(false);
   const [confirmUser, setConfirmUser] = useState<ManagedUser | null>(null);
+  const [confirmPromote, setConfirmPromote] = useState<{ userId: string; email: string } | null>(null);
 
   async function load() {
     setLoading(true);
