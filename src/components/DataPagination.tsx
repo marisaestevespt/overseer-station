@@ -38,8 +38,12 @@ export function DataPagination({ currentPage, totalPages, onPageChange }: Props)
   };
 
   return (
-    <Pagination className="mt-4">
-      <PaginationContent>
+    <div className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
+      <p className="text-sm text-muted-foreground">
+        Página {currentPage} de {totalPages}
+      </p>
+      <Pagination className="m-0 w-auto mx-0 justify-end">
+        <PaginationContent>
         <PaginationItem>
           <PaginationPrevious
             href="#"
@@ -67,7 +71,8 @@ export function DataPagination({ currentPage, totalPages, onPageChange }: Props)
             className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
           />
         </PaginationItem>
-      </PaginationContent>
-    </Pagination>
+        </PaginationContent>
+      </Pagination>
+    </div>
   );
 }

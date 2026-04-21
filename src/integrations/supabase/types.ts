@@ -323,6 +323,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_records: { Args: never; Returns: undefined }
       has_any_role: {
         Args: {
           _roles: Database["public"]["Enums"]["app_role"][]
