@@ -13,6 +13,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -69,6 +79,7 @@ export default function UsersPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<AppRole>("support");
   const [inviting, setInviting] = useState(false);
+  const [confirmUser, setConfirmUser] = useState<ManagedUser | null>(null);
 
   async function load() {
     setLoading(true);
@@ -268,7 +279,7 @@ export default function UsersPage() {
                             variant="ghost"
                             size="sm"
                             disabled={isBusy}
-                            onClick={() => handleToggleActive(u)}
+                            onClick={() => (isBanned ? handleToggleActive(u) : setConfirmUser(u))}
                           >
                             {isBusy ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
@@ -378,6 +389,32 @@ export default function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!confirmUser} onOpenChange={(o) => !o && setConfirmUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desativar utilizador?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmUser?.email} deixará de conseguir aceder ao painel até ser reativado. Esta ação pode ser revertida.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (confirmUser) {
+                  const u = confirmUser;
+                  setConfirmUser(null);
+                  handleToggleActive(u);
+                }
+              }}
+            >
+              Desativar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
