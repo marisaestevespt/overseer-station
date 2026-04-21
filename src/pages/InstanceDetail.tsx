@@ -185,8 +185,26 @@ export default function InstanceDetail() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
+      <nav className="flex items-center gap-1 text-sm text-muted-foreground" aria-label="Breadcrumb">
+        <button
+          onClick={() => navigate("/")}
+          className="hover:text-foreground transition-colors"
+        >
+          Dashboard
+        </button>
+        <span>/</span>
+        <button
+          onClick={() => navigate("/instances")}
+          className="hover:text-foreground transition-colors"
+        >
+          Instâncias
+        </button>
+        <span>/</span>
+        <span className="text-foreground font-medium truncate max-w-xs">{instance.business_name}</span>
+      </nav>
+
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate("/instances")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-2xl font-bold font-heading">{instance.business_name}</h1>
