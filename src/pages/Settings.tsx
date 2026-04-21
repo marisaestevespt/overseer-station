@@ -118,19 +118,26 @@ export default function SettingsPage() {
         return;
       }
       if (data) {
-      setEmailSettings({
-        id: (data as any).id ?? "",
-        business_name: (data as any).business_name ?? "",
-        contact_email: (data as any).contact_email ?? "",
-        phone: (data as any).phone ?? "",
-        address: (data as any).address ?? "",
-        business_hours: (data as any).business_hours ?? "",
-        website: (data as any).website ?? "",
-        logo_url: (data as any).logo_url ?? "",
-        instagram_url: (data as any).instagram_url ?? "",
-        linkedin_url: (data as any).linkedin_url ?? "",
-        facebook_url: (data as any).facebook_url ?? "",
-        twitter_url: (data as any).twitter_url ?? "",
+        setEmailSettings({
+          id: (data as any).id ?? "",
+          business_name: (data as any).business_name ?? "",
+          contact_email: (data as any).contact_email ?? "",
+          phone: (data as any).phone ?? "",
+          address: (data as any).address ?? "",
+          business_hours: (data as any).business_hours ?? "",
+          website: (data as any).website ?? "",
+          logo_url: (data as any).logo_url ?? "",
+          instagram_url: (data as any).instagram_url ?? "",
+          linkedin_url: (data as any).linkedin_url ?? "",
+          facebook_url: (data as any).facebook_url ?? "",
+          twitter_url: (data as any).twitter_url ?? "",
+        });
+      }
+    } catch (err) {
+      toast({
+        title: "Erro ao carregar definições de email",
+        description: err instanceof Error ? err.message : "Erro inesperado.",
+        variant: "destructive",
       });
     }
   }
