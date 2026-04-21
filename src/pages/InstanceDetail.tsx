@@ -356,7 +356,7 @@ export default function InstanceDetail() {
             </Button>
           ) : (
             <>
-              <Button size="sm" variant="destructive" onClick={cancelStripeSubscription} disabled={cancellingSubscription}>
+              <Button size="sm" variant="destructive" onClick={() => setConfirmCancelSub(true)} disabled={cancellingSubscription}>
                 <X className="mr-2 h-3 w-3" />
                 {cancellingSubscription ? "A cancelar..." : "Cancelar Subscrição"}
               </Button>
