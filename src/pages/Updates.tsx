@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -6,53 +7,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { RefreshCw, GitBranch, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-
-interface InstanceVersion {
-  id: string;
-  business_name: string;
-  status: string;
-  instance_url: string | null;
-  health_check_url: string | null;
-  github_repo: string | null;
-  current_version: string | null;
-  last_update_check: string | null;
-}
+import { TableSkeleton } from "@/components/TableSkeleton";
+import { useUpdatesInstances, type InstanceVersion } from "@/hooks/queries/useUpdatesInstances";
 
 const MASTER_VERSION = "2026-04-04-v1.0";
 
 export default function UpdatesPage() {
   const { toast } = useToast();
-  const [instances, setInstances] = useState<InstanceVersion[]>([]);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
+  const { data: instances = [], isLoading } = useUpdatesInstances();
   const [checking, setChecking] = useState<string | null>(null);
   const [checkingAll, setCheckingAll] = useState(false);
-
-  useEffect(() => {
-    fetchInstances();
-  }, []);
-
-  async function fetchInstances() {
-    try {
-      const { data, error } = await supabase
-        .from("instances")
-        .select("id, business_name, status, instance_url, health_check_url, github_repo, current_version, last_update_check" as any)
-        .order("business_name");
-      if (error) {
-        toast({ title: "Erro ao carregar atualizações", description: error.message, variant: "destructive" });
-        setLoading(false);
-        return;
-      }
-      setInstances((data as any) || []);
-    } catch (err) {
-      toast({
-        title: "Erro ao carregar atualizações",
-        description: err instanceof Error ? err.message : "Erro inesperado.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function checkVersion(instance: InstanceVersion) {
     if (!instance.health_check_url) {
@@ -70,11 +35,11 @@ export default function UpdatesPage() {
         .update({
           current_version: version,
           last_update_check: new Date().toISOString(),
-        } as any)
+        })
         .eq("id", instance.id);
 
-      setInstances((prev) =>
-        prev.map((i) =>
+      qc.setQueryData<InstanceVersion[]>(["updates-instances"], (prev) =>
+        (prev ?? []).map((i) =>
           i.id === instance.id
             ? { ...i, current_version: version, last_update_check: new Date().toISOString() }
             : i
@@ -106,8 +71,13 @@ export default function UpdatesPage() {
   ).length;
   const unknownCount = instances.filter((i) => !i.current_version).length;
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-64 text-muted-foreground">A carregar...</div>;
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold font-heading tracking-tight">Atualizações</h1>
+        <TableSkeleton rows={6} columns={7} />
+      </div>
+    );
   }
 
   return (
@@ -187,7 +157,7 @@ export default function UpdatesPage() {
                   return (
                     <TableRow key={inst.id}>
                       <TableCell className="font-medium">{inst.business_name}</TableCell>
-                      <TableCell><StatusBadge status={inst.status as any} /></TableCell>
+                      <TableCell><StatusBadge status={inst.status as never} /></TableCell>
                       <TableCell>
                         {inst.current_version ? (
                           <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{inst.current_version}</code>
