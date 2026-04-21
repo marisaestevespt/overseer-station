@@ -127,7 +127,7 @@ export default function InstanceDetail() {
         window.open(data.setupUrl, "_blank");
       }
 
-      fetchData();
+      refetchAll();
     } catch (err) {
       toast({
         title: "Erro ao criar subscrição",
@@ -151,7 +151,7 @@ export default function InstanceDetail() {
       if (data?.error) throw new Error(data.error);
 
       toast({ title: "Subscrição cancelada" });
-      fetchData();
+      refetchAll();
     } catch (err) {
       toast({
         title: "Erro ao cancelar",
@@ -287,7 +287,7 @@ export default function InstanceDetail() {
                               billing_start_date: date.toISOString(),
                             } as any).eq("id", subscription.id);
                             toast({ title: "Data de cobrança actualizada" });
-                            fetchData();
+                            refetchAll();
                           }}
                           disabled={(date) => date < new Date()}
                           initialFocus
