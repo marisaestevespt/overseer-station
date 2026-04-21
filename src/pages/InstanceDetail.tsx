@@ -443,6 +443,26 @@ export default function InstanceDetail() {
           </>
         )}
       </div>
+
+      <AlertDialog open={confirmCancelSub} onOpenChange={setConfirmCancelSub}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar subscrição?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A subscrição Stripe de <strong>{instance.business_name}</strong> será cancelada imediatamente. Esta ação não pode ser revertida — terás de criar uma nova subscrição se o cliente voltar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={cancelStripeSubscription}
+            >
+              Cancelar subscrição
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
