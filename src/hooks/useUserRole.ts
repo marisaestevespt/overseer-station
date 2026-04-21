@@ -1,38 +1,34 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 export type AppRole = "super_admin" | "admin" | "support";
 
+async function fetchRoles(userId: string): Promise<AppRole[]> {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId);
+  if (error) {
+    console.error("Failed to load user roles", error);
+    return [];
+  }
+  return (data ?? []).map((r) => r.role as AppRole);
+}
+
 export function useUserRole() {
   const { user, loading: authLoading } = useAuth();
-  const [roles, setRoles] = useState<AppRole[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      setRoles([]);
-      setLoading(false);
-      return;
-    }
+  const query = useQuery({
+    queryKey: ["user-roles", user?.id],
+    queryFn: () => fetchRoles(user!.id),
+    enabled: !!user && !authLoading,
+    staleTime: 5 * 60_000, // 5 min — roles mudam raramente
+    gcTime: 10 * 60_000,
+    retry: 1,
+  });
 
-    (async () => {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id);
-
-      if (error) {
-        console.error("Failed to load user roles", error);
-        setRoles([]);
-      } else {
-        setRoles((data ?? []).map((r) => r.role as AppRole));
-      }
-      setLoading(false);
-    })();
-  }, [user, authLoading]);
-
+  const roles = query.data ?? [];
   const isSuperAdmin = roles.includes("super_admin");
   const isAdmin = roles.includes("admin") || isSuperAdmin;
   const isSupport = roles.includes("support") || isAdmin;
@@ -40,7 +36,7 @@ export function useUserRole() {
 
   return {
     roles,
-    loading: authLoading || loading,
+    loading: authLoading || (!!user && query.isLoading),
     isSuperAdmin,
     isAdmin,
     isSupport,
