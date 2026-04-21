@@ -67,6 +67,20 @@ export default function Dashboard() {
     return { activeCount, setupCount, errorCount, mrr, pastDueCount };
   }, [instances]);
 
+  // At-risk instances: past_due, NOT yet suspended, and within suspension window (≤7 days since period_end)
+  const atRiskInstances = useMemo(() => {
+    const now = new Date();
+    return instances
+      .filter((i) => i.subscription?.status === "past_due" && i.status !== "suspended")
+      .map((i) => {
+        const periodEnd = i.subscription?.current_period_end ? new Date(i.subscription.current_period_end) : null;
+        const daysOverdue = periodEnd ? Math.max(0, differenceInDays(now, periodEnd)) : 0;
+        const daysUntilSuspension = Math.max(0, 7 - daysOverdue);
+        return { ...i, daysOverdue, daysUntilSuspension };
+      })
+      .sort((a, b) => a.daysUntilSuspension - b.daysUntilSuspension);
+  }, [instances]);
+
   // Advanced metrics
   const metrics = useMemo(() => {
     const now = new Date();
