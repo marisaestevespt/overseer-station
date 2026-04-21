@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Dashboard from "@/pages/Dashboard";
+import Instances from "@/pages/Instances";
 import NewInstance from "@/pages/NewInstance";
 import InstanceDetail from "@/pages/InstanceDetail";
 import Subscriptions from "@/pages/Subscriptions";
@@ -41,7 +42,7 @@ function ProtectedRoutes() {
       <AppLayout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/instances" element={<Dashboard />} />
+          <Route path="/instances" element={<Instances />} />
           <Route path="/instances/new" element={<NewInstance />} />
           <Route path="/instances/:id" element={<InstanceDetail />} />
           <Route path="/subscriptions" element={<Subscriptions />} />

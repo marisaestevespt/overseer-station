@@ -22,6 +22,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { UserPlus, Mail, Power, PowerOff, Loader2 } from "lucide-react";
 import type { AppRole } from "@/hooks/useUserRole";
+import { describeEdgeFunctionError } from "@/lib/edgeFunctionError";
 
 interface ManagedUser {
   id: string;
@@ -68,7 +69,11 @@ export default function UsersPage() {
     try {
       const { data, error } = await supabase.functions.invoke("list-users");
       if (error) {
-        toast({ title: "Erro ao carregar utilizadores", description: error.message, variant: "destructive" });
+        toast({
+          title: "Erro ao carregar utilizadores",
+          description: describeEdgeFunctionError(error, "list-users"),
+          variant: "destructive",
+        });
       } else if (data) {
         setUsers(data.users ?? []);
         setPending(data.pending ?? []);
@@ -76,7 +81,7 @@ export default function UsersPage() {
     } catch (err) {
       toast({
         title: "Erro ao carregar utilizadores",
-        description: err instanceof Error ? err.message : "Erro inesperado.",
+        description: describeEdgeFunctionError(err, "list-users"),
         variant: "destructive",
       });
     } finally {
@@ -94,7 +99,11 @@ export default function UsersPage() {
     });
     setInviting(false);
     if (error) {
-      toast({ title: "Erro a convidar", description: error.message, variant: "destructive" });
+      toast({
+        title: "Erro a convidar",
+        description: describeEdgeFunctionError(error, "invite-user"),
+        variant: "destructive",
+      });
       return;
     }
     toast({ title: "Convite enviado", description: `${inviteEmail} vai receber um email.` });
@@ -111,7 +120,11 @@ export default function UsersPage() {
     });
     setBusyId(null);
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({
+        title: "Erro",
+        description: describeEdgeFunctionError(error, "update-user-role"),
+        variant: "destructive",
+      });
       return;
     }
     toast({ title: "Role atualizado" });
@@ -125,7 +138,11 @@ export default function UsersPage() {
     const { error } = await supabase.functions.invoke(fn, { body: { user_id: user.id } });
     setBusyId(null);
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({
+        title: "Erro",
+        description: describeEdgeFunctionError(error, fn),
+        variant: "destructive",
+      });
       return;
     }
     toast({ title: isBanned ? "Utilizador reativado" : "Utilizador desativado" });
@@ -139,7 +156,11 @@ export default function UsersPage() {
     });
     setBusyId(null);
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({
+        title: "Erro",
+        description: describeEdgeFunctionError(error, "invite-user"),
+        variant: "destructive",
+      });
       return;
     }
     toast({ title: "Convite reenviado" });
