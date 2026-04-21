@@ -10,42 +10,14 @@ import {
   Mail, Eye, X, Lock, CreditCard, Webhook, GitBranch, Plus, Trash2, Save,
   Upload, Image, Building2, Phone, Clock, Globe, Instagram, Linkedin, Facebook, Twitter,
 } from "lucide-react";
-
-interface Plan {
-  name: string;
-  price: number;
-  features: string[];
-}
-
-interface EmailSettings {
-  id: string;
-  business_name: string;
-  contact_email: string;
-  phone: string;
-  address: string;
-  business_hours: string;
-  website: string;
-  logo_url: string;
-  instagram_url: string;
-  linkedin_url: string;
-  facebook_url: string;
-  twitter_url: string;
-}
-
-const defaultEmailSettings: EmailSettings = {
-  id: "",
-  business_name: "Lirah",
-  contact_email: "suporte@lirah.pt",
-  phone: "",
-  address: "",
-  business_hours: "Seg-Sex, 9h-18h",
-  website: "https://lirah.pt",
-  logo_url: "",
-  instagram_url: "",
-  linkedin_url: "",
-  facebook_url: "",
-  twitter_url: "",
-};
+import { useAdminSettings, useSaveAdminSetting, type Plan } from "@/hooks/queries/useAdminSettings";
+import {
+  useEmailSettings,
+  useSaveEmailSettings,
+  defaultEmailSettings,
+  type EmailSettings,
+} from "@/hooks/queries/useEmailSettings";
+import { CardSkeleton } from "@/components/CardSkeleton";
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -55,119 +27,41 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
 
-  // Settings state
+  // React Query: admin_settings
+  const { data: adminSettings, isLoading: loadingSettings } = useAdminSettings();
+  const saveAdminSetting = useSaveAdminSetting();
+
+  // Local form state derived from remote (allows editing without losing focus)
   const [plans, setPlans] = useState<Plan[]>([]);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [githubToken, setGithubToken] = useState("");
-  const [savingPlans, setSavingPlans] = useState(false);
-  const [savingWebhook, setSavingWebhook] = useState(false);
-  const [savingGithub, setSavingGithub] = useState(false);
-  const [loadingSettings, setLoadingSettings] = useState(true);
 
-  // Email settings state
+  useEffect(() => {
+    if (adminSettings) {
+      setPlans(adminSettings.subscription_plans ?? []);
+      setWebhookUrl(adminSettings.webhook_url ?? "");
+      setGithubToken(adminSettings.github_token ?? "");
+    }
+  }, [adminSettings]);
+
+  // React Query: email_settings
+  const { data: emailRemote } = useEmailSettings();
+  const saveEmail = useSaveEmailSettings();
   const [emailSettings, setEmailSettings] = useState<EmailSettings>(defaultEmailSettings);
-  const [savingEmail, setSavingEmail] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchSettings();
-    fetchEmailSettings();
-  }, []);
+    if (emailRemote) setEmailSettings(emailRemote);
+  }, [emailRemote]);
 
-  async function fetchSettings() {
-    try {
-      const { data, error } = await supabase
-        .from("admin_settings" as any)
-        .select("key, value");
-      if (error) {
-        toast({ title: "Erro ao carregar definições", description: error.message, variant: "destructive" });
-        setLoadingSettings(false);
-        return;
-      }
-      if (data) {
-        for (const row of data as any[]) {
-          if (row.key === "subscription_plans") setPlans(row.value as Plan[]);
-          if (row.key === "webhook_url") setWebhookUrl(row.value as string);
-          if (row.key === "github_token") setGithubToken(row.value as string);
-        }
-      }
-    } catch (err) {
-      toast({
-        title: "Erro ao carregar definições",
-        description: err instanceof Error ? err.message : "Erro inesperado.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingSettings(false);
-    }
-  }
+  const savingPlans = saveAdminSetting.isPending && saveAdminSetting.variables?.key === "subscription_plans";
+  const savingWebhook = saveAdminSetting.isPending && saveAdminSetting.variables?.key === "webhook_url";
+  const savingGithub = saveAdminSetting.isPending && saveAdminSetting.variables?.key === "github_token";
+  const savingEmail = saveEmail.isPending;
 
-  async function fetchEmailSettings() {
-    try {
-      const { data, error } = await supabase
-        .from("email_settings" as any)
-        .select("*")
-        .limit(1)
-        .single();
-      if (error) {
-        // .single() devolve erro se não houver linhas — apenas avisar se não for esse caso
-        if (error.code !== "PGRST116") {
-          toast({ title: "Erro ao carregar definições de email", description: error.message, variant: "destructive" });
-        }
-        return;
-      }
-      if (data) {
-        setEmailSettings({
-          id: (data as any).id ?? "",
-          business_name: (data as any).business_name ?? "",
-          contact_email: (data as any).contact_email ?? "",
-          phone: (data as any).phone ?? "",
-          address: (data as any).address ?? "",
-          business_hours: (data as any).business_hours ?? "",
-          website: (data as any).website ?? "",
-          logo_url: (data as any).logo_url ?? "",
-          instagram_url: (data as any).instagram_url ?? "",
-          linkedin_url: (data as any).linkedin_url ?? "",
-          facebook_url: (data as any).facebook_url ?? "",
-          twitter_url: (data as any).twitter_url ?? "",
-        });
-      }
-    } catch (err) {
-      toast({
-        title: "Erro ao carregar definições de email",
-        description: err instanceof Error ? err.message : "Erro inesperado.",
-        variant: "destructive",
-      });
-    }
-  }
-
-  async function saveSetting(key: string, value: any) {
-    const { error } = await supabase
-      .from("admin_settings" as any)
-      .update({ value, updated_at: new Date().toISOString() } as any)
-      .eq("key", key);
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-      return false;
-    }
-    toast({ title: "Guardado", description: "Configuração atualizada com sucesso." });
-    return true;
-  }
-
-  const handleSaveEmailSettings = async () => {
-    setSavingEmail(true);
-    const { id, ...updates } = emailSettings;
-    const { error } = await supabase
-      .from("email_settings" as any)
-      .update({ ...updates, updated_at: new Date().toISOString() } as any)
-      .eq("id", id);
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Guardado", description: "Definições de email atualizadas com sucesso." });
-    }
-    setSavingEmail(false);
+  const handleSaveEmailSettings = () => {
+    saveEmail.mutate(emailSettings);
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
