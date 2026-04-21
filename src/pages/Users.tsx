@@ -424,6 +424,31 @@ export default function UsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!confirmPromote} onOpenChange={(o) => !o && setConfirmPromote(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Promover a Super Admin?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{confirmPromote?.email}</strong> passará a ter acesso total ao painel, incluindo gestão de utilizadores, definições e capacidade de promover ou despromover outros administradores. Esta ação só deve ser usada para pessoas de confiança.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmPromote) {
+                  const { userId } = confirmPromote;
+                  setConfirmPromote(null);
+                  handleRoleChange(userId, "super_admin");
+                }
+              }}
+            >
+              Promover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
