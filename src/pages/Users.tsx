@@ -80,6 +80,7 @@ export default function UsersPage() {
   const [inviteRole, setInviteRole] = useState<AppRole>("support");
   const [inviting, setInviting] = useState(false);
   const [confirmUser, setConfirmUser] = useState<ManagedUser | null>(null);
+  const [confirmPromote, setConfirmPromote] = useState<{ userId: string; email: string } | null>(null);
 
   async function load() {
     setLoading(true);
@@ -245,7 +246,15 @@ export default function UsersPage() {
                           ) : (
                             <Select
                               value={currentRole}
-                              onValueChange={(v) => handleRoleChange(u.id, v as AppRole)}
+                              onValueChange={(v) => {
+                                const newRole = v as AppRole;
+                                if (newRole === currentRole) return;
+                                if (newRole === "super_admin") {
+                                  setConfirmPromote({ userId: u.id, email: u.email });
+                                } else {
+                                  handleRoleChange(u.id, newRole);
+                                }
+                              }}
                               disabled={isBusy}
                             >
                               <SelectTrigger className="w-[160px]">
@@ -411,6 +420,31 @@ export default function UsersPage() {
               }}
             >
               Desativar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!confirmPromote} onOpenChange={(o) => !o && setConfirmPromote(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Promover a Super Admin?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{confirmPromote?.email}</strong> passará a ter acesso total ao painel, incluindo gestão de utilizadores, definições e capacidade de promover ou despromover outros administradores. Esta ação só deve ser usada para pessoas de confiança.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmPromote) {
+                  const { userId } = confirmPromote;
+                  setConfirmPromote(null);
+                  handleRoleChange(userId, "super_admin");
+                }
+              }}
+            >
+              Promover
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

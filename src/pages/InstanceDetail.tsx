@@ -11,6 +11,16 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, ExternalLink, Copy, RefreshCw, Check, Pencil, CreditCard, X } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
@@ -54,6 +64,7 @@ export default function InstanceDetail() {
   const [copied, setCopied] = useState(false);
   const [creatingSubscription, setCreatingSubscription] = useState(false);
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
+  const [confirmCancelSub, setConfirmCancelSub] = useState(false);
 
   const refetchAll = () => {
     queryClient.invalidateQueries({ queryKey: ["instance", id] });
@@ -69,14 +80,20 @@ export default function InstanceDetail() {
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      await supabase.from("activity_log").insert({
+      // Atualização otimista: só este campo, sem refetch global
+      queryClient.setQueryData(["instance", id], (old: any) =>
+        old ? { ...old, [field]: value } : old,
+      );
+      // Activity log corre em background; só invalida o histórico de actividade
+      supabase.from("activity_log").insert({
         instance_id: instance.id,
         action: `Campo "${field}" actualizado`,
         details: `Novo valor: ${value}`,
         performed_by: "admin",
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ["activity_log"] });
       });
       toast({ title: "Guardado" });
-      refetchAll();
     }
     setEditing({ ...editing, [field]: false });
   }
@@ -153,8 +170,7 @@ export default function InstanceDetail() {
 
   async function cancelStripeSubscription() {
     if (!instance || !subscription?.stripe_subscription_id) return;
-    if (!confirm("Tens a certeza que queres cancelar esta subscrição? Esta acção não pode ser revertida.")) return;
-
+    setConfirmCancelSub(false);
     setCancellingSubscription(true);
     try {
       const { data, error } = await supabase.functions.invoke("cancel-stripe-subscription", {
@@ -340,7 +356,7 @@ export default function InstanceDetail() {
             </Button>
           ) : (
             <>
-              <Button size="sm" variant="destructive" onClick={cancelStripeSubscription} disabled={cancellingSubscription}>
+              <Button size="sm" variant="destructive" onClick={() => setConfirmCancelSub(true)} disabled={cancellingSubscription}>
                 <X className="mr-2 h-3 w-3" />
                 {cancellingSubscription ? "A cancelar..." : "Cancelar Subscrição"}
               </Button>
@@ -427,6 +443,26 @@ export default function InstanceDetail() {
           </>
         )}
       </div>
+
+      <AlertDialog open={confirmCancelSub} onOpenChange={setConfirmCancelSub}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar subscrição?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A subscrição Stripe de <strong>{instance.business_name}</strong> será cancelada imediatamente. Esta ação não pode ser revertida — terás de criar uma nova subscrição se o cliente voltar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={cancelStripeSubscription}
+            >
+              Cancelar subscrição
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
