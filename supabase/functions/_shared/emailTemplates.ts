@@ -169,5 +169,17 @@ export function renewalReminderEmail(ownerName: string, renewalDate: string, amo
   `, branding);
 }
 
+export function reactivationEmail(ownerName: string, instanceUrl: string, branding: EmailBranding = DEFAULT_BRANDING): string {
+  return baseLayout(`
+    <p style="${ts("font-size: 18px; font-weight: 500;")}">Olá ${ownerName},</p>
+    <p style="${ts("font-size: 17px;")}">Boas notícias — o teu ${highlight("acesso foi restaurado")}!</p>
+    <p style="${ts()}">Recebemos o teu pagamento e a tua conta no <strong>${branding.business_name}</strong> está novamente activa. Já podes voltar a usar a plataforma normalmente.</p>
+    ${btn("Aceder à plataforma", instanceUrl)}
+    <p style="${ts("font-size: 13px; color: " + COLORS.muted + ";")}">Obrigado pela tua confiança contínua.</p>
+    ${divider}
+    <p style="${ts("font-size: 14px;")}">Até já,<br/><strong>Equipa ${branding.business_name}</strong></p>
+  `, branding);
+}
+
 export type { EmailBranding };
 export { DEFAULT_BRANDING };
