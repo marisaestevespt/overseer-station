@@ -13,6 +13,7 @@ import { ArrowLeft, ExternalLink, Copy, RefreshCw, Check, Pencil, CreditCard, X,
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
+import { describeEdgeFunctionError } from "@/lib/edgeFunctionError";
 
 type Instance = Database["public"]["Tables"]["instances"]["Row"];
 type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
