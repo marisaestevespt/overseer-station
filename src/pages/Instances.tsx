@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { Plus, Eye, ExternalLink } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,56 +14,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/StatusBadge";
-import type { Database } from "@/integrations/supabase/types";
-
-type Instance = Database["public"]["Tables"]["instances"]["Row"];
+import { useInstances } from "@/hooks/queries/useInstances";
 
 export default function Instances() {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [instances, setInstances] = useState<Instance[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: instances = [], isLoading } = useInstances();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [healthFilter, setHealthFilter] = useState<string>("all");
 
-  useEffect(() => {
-    fetchInstances();
-  }, []);
-
-  async function fetchInstances() {
-    try {
-      const { data, error } = await supabase
-        .from("instances")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        toast({
-          title: "Erro ao carregar instâncias",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-      setInstances(data ?? []);
-    } catch (err) {
-      toast({
-        title: "Erro ao carregar instâncias",
-        description: err instanceof Error ? err.message : "Erro inesperado.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const filtered = instances.filter((i) => {
-    if (statusFilter !== "all" && i.status !== statusFilter) return false;
-    if (healthFilter !== "all" && i.health_status !== healthFilter) return false;
-    if (search && !i.business_name.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  const filtered = useMemo(() => {
+    return instances.filter((i) => {
+      if (statusFilter !== "all" && i.status !== statusFilter) return false;
+      if (healthFilter !== "all" && i.health_status !== healthFilter) return false;
+      if (search && !i.business_name.toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
+    });
+  }, [instances, statusFilter, healthFilter, search]);
 
   return (
     <div className="space-y-6">
@@ -127,7 +92,7 @@ export default function Instances() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     A carregar...
