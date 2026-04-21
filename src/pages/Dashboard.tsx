@@ -170,6 +170,39 @@ export default function Dashboard() {
         </Button>
       </div>
 
+      {/* At-Risk Alert */}
+      {atRiskInstances.length > 0 && (
+        <Alert variant="destructive" className="border-warning/50 bg-warning/10 text-foreground">
+          <AlertCircle className="h-4 w-4 text-warning" />
+          <AlertTitle className="text-warning">
+            {atRiskInstances.length} {atRiskInstances.length === 1 ? "instância em risco de suspensão" : "instâncias em risco de suspensão"}
+          </AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 space-y-1">
+              {atRiskInstances.slice(0, 5).map((i) => (
+                <button
+                  key={i.id}
+                  onClick={() => navigate(`/instances/${i.id}`)}
+                  className="flex items-center justify-between w-full text-left text-sm py-1 px-2 rounded hover:bg-background/50 transition-colors"
+                >
+                  <span className="font-medium">{i.business_name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {i.daysUntilSuspension === 0
+                      ? "⚠️ Suspensão iminente"
+                      : `Suspensão em ${i.daysUntilSuspension} ${i.daysUntilSuspension === 1 ? "dia" : "dias"} (atrasado há ${i.daysOverdue}d)`}
+                  </span>
+                </button>
+              ))}
+              {atRiskInstances.length > 5 && (
+                <p className="text-xs text-muted-foreground pt-1">
+                  + {atRiskInstances.length - 5} {atRiskInstances.length - 5 === 1 ? "outra" : "outras"}
+                </p>
+              )}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Primary KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <KPICard title="Instâncias Activas" value={basicKpis.activeCount} icon={Server} accent="success" />
