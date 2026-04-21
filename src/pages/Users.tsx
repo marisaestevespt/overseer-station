@@ -246,7 +246,15 @@ export default function UsersPage() {
                           ) : (
                             <Select
                               value={currentRole}
-                              onValueChange={(v) => handleRoleChange(u.id, v as AppRole)}
+                              onValueChange={(v) => {
+                                const newRole = v as AppRole;
+                                if (newRole === currentRole) return;
+                                if (newRole === "super_admin") {
+                                  setConfirmPromote({ userId: u.id, email: u.email });
+                                } else {
+                                  handleRoleChange(u.id, newRole);
+                                }
+                              }}
                               disabled={isBusy}
                             >
                               <SelectTrigger className="w-[160px]">
