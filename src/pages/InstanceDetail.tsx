@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,11 @@ import type { Database } from "@/integrations/supabase/types";
 import { describeEdgeFunctionError } from "@/lib/edgeFunctionError";
 import { useInstance } from "@/hooks/queries/useInstances";
 import { useInstanceActivityLog } from "@/hooks/queries/useActivityLog";
+import { CardSkeleton } from "@/components/CardSkeleton";
+import { TableSkeleton } from "@/components/TableSkeleton";
+import { DataPagination } from "@/components/DataPagination";
+
+const ACTIVITY_PAGE_SIZE = 10;
 
 type Instance = Database["public"]["Tables"]["instances"]["Row"];
 
@@ -25,8 +30,9 @@ export default function InstanceDetail() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: instanceData } = useInstance(id);
-  const { data: activities = [] } = useInstanceActivityLog(id);
+  const { data: instanceData, isLoading: instanceLoading } = useInstance(id);
+  const { data: activities = [], isLoading: activitiesLoading } = useInstanceActivityLog(id);
+  const [activityPage, setActivityPage] = useState(1);
 
   const instance: Instance | null = instanceData
     ? ({ ...(instanceData as object), subscriptions: undefined } as unknown as Instance)
@@ -34,6 +40,13 @@ export default function InstanceDetail() {
   const subscription = instanceData?.subscriptions && instanceData.subscriptions.length > 0
     ? instanceData.subscriptions[0]
     : null;
+
+  const activityTotalPages = Math.max(1, Math.ceil(activities.length / ACTIVITY_PAGE_SIZE));
+  const activityCurrentPage = Math.min(activityPage, activityTotalPages);
+  const paginatedActivities = useMemo(
+    () => activities.slice((activityCurrentPage - 1) * ACTIVITY_PAGE_SIZE, activityCurrentPage * ACTIVITY_PAGE_SIZE),
+    [activities, activityCurrentPage],
+  );
 
   const [editing, setEditing] = useState<Record<string, boolean>>({});
   const [editValues, setEditValues] = useState<Record<string, string>>({});
@@ -175,7 +188,16 @@ export default function InstanceDetail() {
     setEditValues({ ...editValues, [field]: currentValue || "" });
   }
 
-  if (!instance) return <div className="flex items-center justify-center h-64 text-muted-foreground">A carregar...</div>;
+  if (instanceLoading || !instance) {
+    return (
+      <div className="space-y-6 max-w-4xl mx-auto">
+        <CardSkeleton count={3} />
+        <div className="glass-card p-5">
+          <TableSkeleton rows={5} columns={4} />
+        </div>
+      </div>
+    );
+  }
 
   const editableField = (label: string, field: keyof Instance) => (
     <div className="flex items-center justify-between py-2 border-b border-border/50">
@@ -371,29 +393,38 @@ export default function InstanceDetail() {
       {/* Activity Log */}
       <div className="glass-card p-5">
         <h2 className="text-lg font-semibold mb-3 font-heading">Histórico de Actividade</h2>
-        {activities.length === 0 ? (
+        {activitiesLoading ? (
+          <TableSkeleton rows={5} columns={4} />
+        ) : activities.length === 0 ? (
           <p className="text-sm text-muted-foreground">Sem actividade registada</p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Acção</TableHead>
-                <TableHead>Detalhes</TableHead>
-                <TableHead>Por</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {activities.map((a) => (
-                <TableRow key={a.id}>
-                  <TableCell className="text-xs text-muted-foreground">{format(new Date(a.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
-                  <TableCell className="text-sm">{a.action}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{a.details || "—"}</TableCell>
-                  <TableCell className="text-xs">{a.performed_by}</TableCell>
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Acção</TableHead>
+                  <TableHead>Detalhes</TableHead>
+                  <TableHead>Por</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {paginatedActivities.map((a) => (
+                  <TableRow key={a.id}>
+                    <TableCell className="text-xs text-muted-foreground">{format(new Date(a.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
+                    <TableCell className="text-sm">{a.action}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{a.details || "—"}</TableCell>
+                    <TableCell className="text-xs">{a.performed_by}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <DataPagination
+              currentPage={activityCurrentPage}
+              totalPages={activityTotalPages}
+              onPageChange={setActivityPage}
+            />
+          </>
         )}
       </div>
     </div>

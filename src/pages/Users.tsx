@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -20,9 +20,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { UserPlus, Mail, Power, PowerOff, Loader2 } from "lucide-react";
+import { UserPlus, Mail, Power, PowerOff, Loader2, Users as UsersIcon } from "lucide-react";
 import type { AppRole } from "@/hooks/useUserRole";
 import { describeEdgeFunctionError } from "@/lib/edgeFunctionError";
+import { TableSkeleton } from "@/components/TableSkeleton";
+import { EmptyState } from "@/components/EmptyState";
+import { DataPagination } from "@/components/DataPagination";
 
 interface ManagedUser {
   id: string;
@@ -39,6 +42,8 @@ interface PendingInvite {
   role: AppRole;
   created_at: string;
 }
+
+const PAGE_SIZE = 20;
 
 const ROLE_LABELS: Record<AppRole, string> = {
   super_admin: "Super Admin",
@@ -58,6 +63,7 @@ export default function UsersPage() {
   const [pending, setPending] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -90,6 +96,13 @@ export default function UsersPage() {
   }
 
   useEffect(() => { load(); }, []);
+
+  const totalPages = Math.max(1, Math.ceil(users.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedUsers = useMemo(
+    () => users.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [users, currentPage],
+  );
 
   async function handleInvite() {
     if (!inviteEmail.trim()) return;
@@ -185,85 +198,94 @@ export default function UsersPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> A carregar...
-            </div>
+            <TableSkeleton rows={6} columns={6} />
+          ) : users.length === 0 ? (
+            <EmptyState
+              icon={<UsersIcon />}
+              title="Sem utilizadores"
+              description="Convida o primeiro utilizador para começar."
+              actionLabel="Convidar utilizador"
+              onAction={() => setInviteOpen(true)}
+            />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Criado</TableHead>
-                  <TableHead>Último login</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((u) => {
-                  const currentRole = (u.roles[0] as AppRole | undefined) ?? "support";
-                  const isBanned = !!u.banned_until && new Date(u.banned_until) > new Date();
-                  const isBusy = busyId === u.id;
-                  return (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium">{u.email}</TableCell>
-                      <TableCell>
-                        {u.roles.length === 0 ? (
-                          <Badge variant="outline">Sem role</Badge>
-                        ) : (
-                          <Select
-                            value={currentRole}
-                            onValueChange={(v) => handleRoleChange(u.id, v as AppRole)}
-                            disabled={isBusy}
-                          >
-                            <SelectTrigger className="w-[160px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="super_admin">Super Admin</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              <SelectItem value="support">Support</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {new Date(u.created_at).toLocaleDateString("pt-PT")}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("pt-PT") : "Nunca"}
-                      </TableCell>
-                      <TableCell>
-                        {isBanned ? (
-                          <Badge variant="destructive">Desativado</Badge>
-                        ) : u.email_confirmed_at ? (
-                          <Badge>Activo</Badge>
-                        ) : (
-                          <Badge variant="secondary">Pendente</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={isBusy}
-                          onClick={() => handleToggleActive(u)}
-                        >
-                          {isBusy ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : isBanned ? (
-                            <Power className="h-4 w-4" />
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Criado</TableHead>
+                    <TableHead>Último login</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedUsers.map((u) => {
+                    const currentRole = (u.roles[0] as AppRole | undefined) ?? "support";
+                    const isBanned = !!u.banned_until && new Date(u.banned_until) > new Date();
+                    const isBusy = busyId === u.id;
+                    return (
+                      <TableRow key={u.id}>
+                        <TableCell className="font-medium">{u.email}</TableCell>
+                        <TableCell>
+                          {u.roles.length === 0 ? (
+                            <Badge variant="outline">Sem role</Badge>
                           ) : (
-                            <PowerOff className="h-4 w-4" />
+                            <Select
+                              value={currentRole}
+                              onValueChange={(v) => handleRoleChange(u.id, v as AppRole)}
+                              disabled={isBusy}
+                            >
+                              <SelectTrigger className="w-[160px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="super_admin">Super Admin</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="support">Support</SelectItem>
+                              </SelectContent>
+                            </Select>
                           )}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {new Date(u.created_at).toLocaleDateString("pt-PT")}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("pt-PT") : "Nunca"}
+                        </TableCell>
+                        <TableCell>
+                          {isBanned ? (
+                            <Badge variant="destructive">Desativado</Badge>
+                          ) : u.email_confirmed_at ? (
+                            <Badge>Activo</Badge>
+                          ) : (
+                            <Badge variant="secondary">Pendente</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={isBusy}
+                            onClick={() => handleToggleActive(u)}
+                          >
+                            {isBusy ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : isBanned ? (
+                              <Power className="h-4 w-4" />
+                            ) : (
+                              <PowerOff className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              <DataPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />
+            </>
           )}
         </CardContent>
       </Card>

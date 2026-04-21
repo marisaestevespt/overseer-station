@@ -10,6 +10,8 @@ import { Server, Settings, AlertTriangle, DollarSign, Clock, Plus, ExternalLink,
 import { format, subDays, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useInstances, type InstanceWithSubscriptions } from "@/hooks/queries/useInstances";
+import { CardSkeleton } from "@/components/CardSkeleton";
+import { TableSkeleton } from "@/components/TableSkeleton";
 import type { Database } from "@/integrations/supabase/types";
 
 type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
@@ -130,7 +132,17 @@ export default function Dashboard() {
   }, [instances]);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-64 text-muted-foreground">A carregar...</div>;
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold font-heading tracking-tight">Dashboard</h1>
+        </div>
+        <CardSkeleton count={8} />
+        <div className="hq-card p-4">
+          <TableSkeleton rows={6} columns={7} />
+        </div>
+      </div>
+    );
   }
 
   return (
