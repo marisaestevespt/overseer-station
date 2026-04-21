@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
 type ActivityLog = Database["public"]["Tables"]["activity_log"]["Row"];
@@ -13,17 +14,35 @@ interface LogWithInstance extends ActivityLog {
 }
 
 export default function ActivityLogPage() {
+  const { toast } = useToast();
   const [logs, setLogs] = useState<LogWithInstance[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase
-      .from("activity_log")
-      .select("*, instances(business_name)")
-      .order("created_at", { ascending: false })
-      .limit(200)
-      .then(({ data }) => setLogs((data as LogWithInstance[]) || []));
-  }, []);
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("activity_log")
+          .select("*, instances(business_name)")
+          .order("created_at", { ascending: false })
+          .limit(200);
+        if (error) {
+          toast({ title: "Erro ao carregar log de atividade", description: error.message, variant: "destructive" });
+        } else {
+          setLogs((data as LogWithInstance[]) || []);
+        }
+      } catch (err) {
+        toast({
+          title: "Erro ao carregar log de atividade",
+          description: err instanceof Error ? err.message : "Erro inesperado.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [toast]);
 
   return (
     <div className="space-y-6">

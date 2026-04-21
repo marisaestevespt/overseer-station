@@ -76,26 +76,48 @@ export default function SettingsPage() {
   }, []);
 
   async function fetchSettings() {
-    const { data } = await supabase
-      .from("admin_settings" as any)
-      .select("key, value");
-    if (data) {
-      for (const row of data as any[]) {
-        if (row.key === "subscription_plans") setPlans(row.value as Plan[]);
-        if (row.key === "webhook_url") setWebhookUrl(row.value as string);
-        if (row.key === "github_token") setGithubToken(row.value as string);
+    try {
+      const { data, error } = await supabase
+        .from("admin_settings" as any)
+        .select("key, value");
+      if (error) {
+        toast({ title: "Erro ao carregar definições", description: error.message, variant: "destructive" });
+        setLoadingSettings(false);
+        return;
       }
+      if (data) {
+        for (const row of data as any[]) {
+          if (row.key === "subscription_plans") setPlans(row.value as Plan[]);
+          if (row.key === "webhook_url") setWebhookUrl(row.value as string);
+          if (row.key === "github_token") setGithubToken(row.value as string);
+        }
+      }
+    } catch (err) {
+      toast({
+        title: "Erro ao carregar definições",
+        description: err instanceof Error ? err.message : "Erro inesperado.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingSettings(false);
     }
-    setLoadingSettings(false);
   }
 
   async function fetchEmailSettings() {
-    const { data } = await supabase
-      .from("email_settings" as any)
-      .select("*")
-      .limit(1)
-      .single();
-    if (data) {
+    try {
+      const { data, error } = await supabase
+        .from("email_settings" as any)
+        .select("*")
+        .limit(1)
+        .single();
+      if (error) {
+        // .single() devolve erro se não houver linhas — apenas avisar se não for esse caso
+        if (error.code !== "PGRST116") {
+          toast({ title: "Erro ao carregar definições de email", description: error.message, variant: "destructive" });
+        }
+        return;
+      }
+      if (data) {
       setEmailSettings({
         id: (data as any).id ?? "",
         business_name: (data as any).business_name ?? "",

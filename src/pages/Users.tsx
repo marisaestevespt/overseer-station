@@ -65,14 +65,23 @@ export default function UsersPage() {
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase.functions.invoke("list-users");
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    } else if (data) {
-      setUsers(data.users ?? []);
-      setPending(data.pending ?? []);
+    try {
+      const { data, error } = await supabase.functions.invoke("list-users");
+      if (error) {
+        toast({ title: "Erro ao carregar utilizadores", description: error.message, variant: "destructive" });
+      } else if (data) {
+        setUsers(data.users ?? []);
+        setPending(data.pending ?? []);
+      }
+    } catch (err) {
+      toast({
+        title: "Erro ao carregar utilizadores",
+        description: err instanceof Error ? err.message : "Erro inesperado.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   useEffect(() => { load(); }, []);

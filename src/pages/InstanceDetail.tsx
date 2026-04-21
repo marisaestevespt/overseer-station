@@ -37,13 +37,38 @@ export default function InstanceDetail() {
   }, [id]);
 
   async function fetchData() {
-    const { data: inst } = await supabase.from("instances").select("*").eq("id", id!).single();
-    const { data: sub } = await supabase.from("subscriptions").select("*").eq("instance_id", id!).maybeSingle();
-    const { data: logs } = await supabase.from("activity_log").select("*").eq("instance_id", id!).order("created_at", { ascending: false });
+    try {
+      const { data: inst, error: instError } = await supabase
+        .from("instances").select("*").eq("id", id!).single();
+      if (instError) {
+        toast({ title: "Erro ao carregar instância", description: instError.message, variant: "destructive" });
+        return;
+      }
 
-    if (inst) setInstance(inst);
-    if (sub) setSubscription(sub);
-    setActivities(logs || []);
+      const { data: sub, error: subError } = await supabase
+        .from("subscriptions").select("*").eq("instance_id", id!).maybeSingle();
+      if (subError) {
+        toast({ title: "Erro ao carregar subscrição", description: subError.message, variant: "destructive" });
+        return;
+      }
+
+      const { data: logs, error: logsError } = await supabase
+        .from("activity_log").select("*").eq("instance_id", id!).order("created_at", { ascending: false });
+      if (logsError) {
+        toast({ title: "Erro ao carregar histórico", description: logsError.message, variant: "destructive" });
+        return;
+      }
+
+      if (inst) setInstance(inst);
+      if (sub) setSubscription(sub);
+      setActivities(logs || []);
+    } catch (err) {
+      toast({
+        title: "Erro ao carregar instância",
+        description: err instanceof Error ? err.message : "Erro inesperado.",
+        variant: "destructive",
+      });
+    }
   }
 
   async function saveField(field: string) {

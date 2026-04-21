@@ -32,12 +32,26 @@ export default function UpdatesPage() {
   }, []);
 
   async function fetchInstances() {
-    const { data } = await supabase
-      .from("instances")
-      .select("id, business_name, status, instance_url, health_check_url, github_repo, current_version, last_update_check" as any)
-      .order("business_name");
-    setInstances((data as any) || []);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from("instances")
+        .select("id, business_name, status, instance_url, health_check_url, github_repo, current_version, last_update_check" as any)
+        .order("business_name");
+      if (error) {
+        toast({ title: "Erro ao carregar atualizações", description: error.message, variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+      setInstances((data as any) || []);
+    } catch (err) {
+      toast({
+        title: "Erro ao carregar atualizações",
+        description: err instanceof Error ? err.message : "Erro inesperado.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function checkVersion(instance: InstanceVersion) {
