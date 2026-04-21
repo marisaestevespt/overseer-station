@@ -16,15 +16,15 @@ interface EmailBranding {
 }
 
 const DEFAULT_BRANDING: EmailBranding = {
-  business_name: "Lirah",
-  contact_email: "suporte@lirah.pt",
+  business_name: "Lyrata",
+  contact_email: "suporte@lyrata.pt",
   phone: "+351 912 345 678",
   address: "",
   business_hours: "Seg-Sex, 9h-18h",
-  website: "https://lirah.pt",
+  website: "https://lyrata.pt",
   logo_url: "",
-  instagram_url: "https://instagram.com/lirah",
-  linkedin_url: "https://linkedin.com/company/lirah",
+  instagram_url: "https://instagram.com/lyrata",
+  linkedin_url: "https://linkedin.com/company/lyrata",
   facebook_url: "",
   twitter_url: "",
 };

@@ -20,12 +20,12 @@ export interface EmailSettings {
 
 export const defaultEmailSettings: EmailSettings = {
   id: "",
-  business_name: "Lirah",
-  contact_email: "suporte@lirah.pt",
+  business_name: "Lyrata",
+  contact_email: "suporte@lyrata.pt",
   phone: "",
   address: "",
   business_hours: "Seg-Sex, 9h-18h",
-  website: "https://lirah.pt",
+  website: "https://lyrata.pt",
   logo_url: "",
   instagram_url: "",
   linkedin_url: "",

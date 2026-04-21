@@ -98,11 +98,11 @@ export function EmailBrandingTab() {
         <div className="grid md:grid-cols-2 gap-4 max-w-2xl">
           <div className="space-y-2">
             <Label>Nome do negócio *</Label>
-            <Input value={emailSettings.business_name} onChange={(e) => updateField("business_name", e.target.value)} placeholder="Lirah" />
+            <Input value={emailSettings.business_name} onChange={(e) => updateField("business_name", e.target.value)} placeholder="Lyrata" />
           </div>
           <div className="space-y-2">
             <Label>Email de contacto *</Label>
-            <Input type="email" value={emailSettings.contact_email} onChange={(e) => updateField("contact_email", e.target.value)} placeholder="suporte@lirah.pt" />
+            <Input type="email" value={emailSettings.contact_email} onChange={(e) => updateField("contact_email", e.target.value)} placeholder="suporte@lyrata.pt" />
           </div>
           <div className="space-y-2">
             <Label className="flex items-center gap-1"><Phone className="h-3 w-3" /> Telefone</Label>
@@ -118,7 +118,7 @@ export function EmailBrandingTab() {
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label className="flex items-center gap-1"><Globe className="h-3 w-3" /> Website</Label>
-            <Input value={emailSettings.website ?? ""} onChange={(e) => updateField("website", e.target.value)} placeholder="https://lirah.pt" />
+            <Input value={emailSettings.website ?? ""} onChange={(e) => updateField("website", e.target.value)} placeholder="https://lyrata.pt" />
           </div>
         </div>
       </div>
