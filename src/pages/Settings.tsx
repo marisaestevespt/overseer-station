@@ -102,20 +102,14 @@ export default function SettingsPage() {
     toast({ title: "Logo carregado", description: "Não te esqueças de guardar as definições." });
   };
 
-  const handleSavePlans = async () => {
-    setSavingPlans(true);
-    await saveSetting("subscription_plans", plans);
-    setSavingPlans(false);
+  const handleSavePlans = () => {
+    saveAdminSetting.mutate({ key: "subscription_plans", value: plans });
   };
-  const handleSaveWebhook = async () => {
-    setSavingWebhook(true);
-    await saveSetting("webhook_url", webhookUrl);
-    setSavingWebhook(false);
+  const handleSaveWebhook = () => {
+    saveAdminSetting.mutate({ key: "webhook_url", value: webhookUrl });
   };
-  const handleSaveGithub = async () => {
-    setSavingGithub(true);
-    await saveSetting("github_token", githubToken);
-    setSavingGithub(false);
+  const handleSaveGithub = () => {
+    saveAdminSetting.mutate({ key: "github_token", value: githubToken });
   };
 
   const addPlan = () => setPlans([...plans, { name: "", price: 0, features: [] }]);
@@ -162,7 +156,12 @@ export default function SettingsPage() {
   const activePreview = templatePreviews.find((t) => t.id === previewId);
 
   if (loadingSettings) {
-    return <div className="flex items-center justify-center h-64 text-muted-foreground">A carregar...</div>;
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold font-heading tracking-tight">Definições</h1>
+        <CardSkeleton count={3} />
+      </div>
+    );
   }
 
   return (
