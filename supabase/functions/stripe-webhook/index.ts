@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { paymentFailedEmail } from "../_shared/emailTemplates.ts";
+import { getSubCurrentPeriodEndISO } from "../_shared/stripeHelpers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -60,11 +61,13 @@ serve(async (req) => {
           .eq("stripe_subscription_id", sub.id)
           .maybeSingle();
 
+        const periodEndISO = getSubCurrentPeriodEndISO(sub);
+
         if (existingSub) {
           await supabase.from("subscriptions").update({
             status,
             monthly_amount: monthlyAmount,
-            current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+            current_period_end: periodEndISO,
             stripe_customer_id: customerId,
           }).eq("id", existingSub.id);
 
@@ -75,8 +78,6 @@ serve(async (req) => {
             performed_by: "stripe-webhook",
           });
         } else {
-          // Try to find by customer email
-          const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
           const { data: subByCustomer } = await supabase
             .from("subscriptions")
             .select("id, instance_id")
@@ -87,7 +88,7 @@ serve(async (req) => {
             await supabase.from("subscriptions").update({
               status,
               monthly_amount: monthlyAmount,
-              current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+              current_period_end: periodEndISO,
               stripe_subscription_id: sub.id,
             }).eq("id", subByCustomer.id);
 
@@ -117,7 +118,7 @@ serve(async (req) => {
           const stripeSub = await stripe.subscriptions.retrieve(subId);
           await supabase.from("subscriptions").update({
             status: "active",
-            current_period_end: new Date(stripeSub.current_period_end * 1000).toISOString(),
+            current_period_end: getSubCurrentPeriodEndISO(stripeSub),
           }).eq("id", subRecord.id);
 
           // Check if instance was suspended → reactivate automatically

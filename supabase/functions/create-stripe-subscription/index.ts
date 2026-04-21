@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { sepaSetupEmail } from "../_shared/emailTemplates.ts";
+import { getSubCurrentPeriodEndISO } from "../_shared/stripeHelpers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -126,6 +127,8 @@ serve(async (req) => {
       .eq("instance_id", instanceId)
       .maybeSingle();
 
+    const periodEndISO = getSubCurrentPeriodEndISO(subscription);
+
     if (existingSub) {
       await supabase.from("subscriptions").update({
         stripe_customer_id: customer.id,
@@ -133,7 +136,7 @@ serve(async (req) => {
         status: "active",
         monthly_amount: monthlyAmount,
         plan: "standard",
-        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        current_period_end: periodEndISO,
         billing_start_date: billingStartDate || null,
       }).eq("id", existingSub.id);
     } else {
@@ -144,7 +147,7 @@ serve(async (req) => {
         status: "active",
         monthly_amount: monthlyAmount,
         plan: "standard",
-        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        current_period_end: periodEndISO,
         billing_start_date: billingStartDate || null,
       });
     }
