@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
 type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
@@ -13,13 +14,33 @@ interface SubWithInstance extends Subscription {
 }
 
 export default function Subscriptions() {
+  const { toast } = useToast();
   const [subs, setSubs] = useState<SubWithInstance[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from("subscriptions").select("*, instances(*)").order("created_at", { ascending: false }).then(({ data }) => {
-      setSubs((data as SubWithInstance[]) || []);
-    });
-  }, []);
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("subscriptions")
+          .select("*, instances(*)")
+          .order("created_at", { ascending: false });
+        if (error) {
+          toast({ title: "Erro ao carregar subscrições", description: error.message, variant: "destructive" });
+        } else {
+          setSubs((data as SubWithInstance[]) || []);
+        }
+      } catch (err) {
+        toast({
+          title: "Erro ao carregar subscrições",
+          description: err instanceof Error ? err.message : "Erro inesperado.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [toast]);
 
   return (
     <div className="space-y-6">

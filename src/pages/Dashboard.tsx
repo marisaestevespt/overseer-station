@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { KPICard } from "@/components/KPICard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ const SECTOR_COLORS = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [instances, setInstances] = useState<InstanceWithSub[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -41,15 +43,38 @@ export default function Dashboard() {
   }, []);
 
   async function fetchData() {
-    const { data: inst } = await supabase.from("instances").select("*").order("created_at", { ascending: false });
-    const { data: subs } = await supabase.from("subscriptions").select("*");
+    try {
+      const { data: inst, error: instError } = await supabase
+        .from("instances")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (instError) {
+        toast({ title: "Erro ao carregar dashboard", description: instError.message, variant: "destructive" });
+        setLoading(false);
+        return;
+      }
 
-    const merged = (inst || []).map((i) => ({
-      ...i,
-      subscription: (subs || []).find((s) => s.instance_id === i.id) || null,
-    }));
-    setInstances(merged);
-    setLoading(false);
+      const { data: subs, error: subsError } = await supabase.from("subscriptions").select("*");
+      if (subsError) {
+        toast({ title: "Erro ao carregar dashboard", description: subsError.message, variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
+      const merged = (inst || []).map((i) => ({
+        ...i,
+        subscription: (subs || []).find((s) => s.instance_id === i.id) || null,
+      }));
+      setInstances(merged);
+    } catch (err) {
+      toast({
+        title: "Erro ao carregar dashboard",
+        description: err instanceof Error ? err.message : "Erro inesperado.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   }
 
   const filtered = instances.filter((i) => {

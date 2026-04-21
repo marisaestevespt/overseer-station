@@ -50,44 +50,62 @@ export default function NewInstance() {
     e.preventDefault();
     setLoading(true);
 
-    const { data: instance, error } = await supabase
-      .from("instances")
-      .insert({
-        business_name: form.business_name,
-        owner_name: form.owner_name,
-        owner_email: form.owner_email,
-        instance_url: form.instance_url || null,
-        health_check_url: form.health_check_url || null,
-        notes: form.notes || null,
-        status: "setup",
-        sector: form.sector || null,
-      } as any)
-      .select()
-      .single();
+    let instance: any = null;
+    try {
+      const { data, error } = await supabase
+        .from("instances")
+        .insert({
+          business_name: form.business_name,
+          owner_name: form.owner_name,
+          owner_email: form.owner_email,
+          instance_url: form.instance_url || null,
+          health_check_url: form.health_check_url || null,
+          notes: form.notes || null,
+          status: "setup",
+          sector: form.sector || null,
+        } as any)
+        .select()
+        .single();
 
-    if (error || !instance) {
-      toast({ title: "Erro", description: error?.message || "Erro ao criar instância", variant: "destructive" });
+      if (error || !data) {
+        toast({ title: "Erro ao criar instância", description: error?.message || "Não foi possível criar.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+      instance = data;
+
+      // Create subscription
+      if (form.monthly_amount) {
+        const { error: subError } = await supabase.from("subscriptions").insert({
+          instance_id: instance.id,
+          monthly_amount: parseFloat(form.monthly_amount),
+          status: "active",
+          billing_start_date: billingStartDate ? billingStartDate.toISOString() : null,
+        } as any);
+        if (subError) {
+          toast({ title: "Erro ao criar subscrição", description: subError.message, variant: "destructive" });
+        }
+      }
+
+      // Log activity
+      const { error: logError } = await supabase.from("activity_log").insert({
+        instance_id: instance.id,
+        action: "Instância criada",
+        details: `Negócio: ${form.business_name}, Owner: ${form.owner_name}, Setor: ${form.sector || "N/A"}${billingStartDate ? `, Cobrança a partir de: ${format(billingStartDate, "dd/MM/yyyy")}` : ""}`,
+        performed_by: "admin",
+      });
+      if (logError) {
+        toast({ title: "Aviso", description: `Não foi possível registar no log: ${logError.message}`, variant: "destructive" });
+      }
+    } catch (err) {
+      toast({
+        title: "Erro ao criar instância",
+        description: err instanceof Error ? err.message : "Erro inesperado.",
+        variant: "destructive",
+      });
       setLoading(false);
       return;
     }
-
-    // Create subscription
-    if (form.monthly_amount) {
-      await supabase.from("subscriptions").insert({
-        instance_id: instance.id,
-        monthly_amount: parseFloat(form.monthly_amount),
-        status: "active",
-        billing_start_date: billingStartDate ? billingStartDate.toISOString() : null,
-      } as any);
-    }
-
-    // Log activity
-    await supabase.from("activity_log").insert({
-      instance_id: instance.id,
-      action: "Instância criada",
-      details: `Negócio: ${form.business_name}, Owner: ${form.owner_name}, Setor: ${form.sector || "N/A"}${billingStartDate ? `, Cobrança a partir de: ${format(billingStartDate, "dd/MM/yyyy")}` : ""}`,
-      performed_by: "admin",
-    });
 
     // Send welcome email if subscription is active
     if (form.monthly_amount && form.instance_url) {
