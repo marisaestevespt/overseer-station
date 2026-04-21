@@ -120,8 +120,45 @@ serve(async (req) => {
             current_period_end: new Date(stripeSub.current_period_end * 1000).toISOString(),
           }).eq("id", subRecord.id);
 
-          // Reactivate instance if suspended
-          await supabase.from("instances").update({ status: "active" }).eq("id", subRecord.instance_id).eq("status", "suspended");
+          // Check if instance was suspended → reactivate automatically
+          const { data: instBefore } = await supabase
+            .from("instances")
+            .select("status, owner_name, owner_email, business_name")
+            .eq("id", subRecord.instance_id)
+            .single();
+
+          const wasSuspended = instBefore?.status === "suspended";
+
+          if (wasSuspended) {
+            await supabase.from("instances").update({ status: "active" }).eq("id", subRecord.instance_id);
+
+            await supabase.from("activity_log").insert({
+              instance_id: subRecord.instance_id,
+              action: "Instância reactivada automaticamente",
+              details: "Pagamento regularizado — acesso restaurado",
+              performed_by: "stripe-webhook",
+            });
+
+            // Send reactivation email
+            const resendKey = Deno.env.get("RESEND_API_KEY");
+            if (resendKey && instBefore) {
+              try {
+                await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                  },
+                  body: JSON.stringify({
+                    template: "reactivation",
+                    instanceId: subRecord.instance_id,
+                  }),
+                });
+              } catch (emailErr) {
+                log("Failed to send reactivation email", { error: String(emailErr) });
+              }
+            }
+          }
 
           await supabase.from("activity_log").insert({
             instance_id: subRecord.instance_id,
