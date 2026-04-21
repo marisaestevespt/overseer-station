@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,7 @@ const SECTORS = [
 export default function NewInstance() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [billingStartDate, setBillingStartDate] = useState<Date | undefined>();
   const [form, setForm] = useState({
@@ -124,6 +126,9 @@ export default function NewInstance() {
     }
 
     toast({ title: "Instância criada", description: `${form.business_name} foi registada com sucesso.` });
+    queryClient.invalidateQueries({ queryKey: ["instances"] });
+    queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+    queryClient.invalidateQueries({ queryKey: ["activity_log"] });
     navigate(`/instances/${instance.id}`);
     setLoading(false);
   };
