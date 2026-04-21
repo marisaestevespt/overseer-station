@@ -16,7 +16,7 @@ interface EmailBranding {
 }
 
 const DEFAULT_BRANDING: EmailBranding = {
-  business_name: "Lyrata",
+  business_name: "Lyrata®",
   contact_email: "suporte@lyrata.pt",
   phone: "",
   address: "",
