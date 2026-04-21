@@ -152,7 +152,11 @@ export default function InstanceDetail() {
 
       fetchData();
     } catch (err) {
-      toast({ title: "Erro ao criar subscrição", description: String(err), variant: "destructive" });
+      toast({
+        title: "Erro ao criar subscrição",
+        description: describeEdgeFunctionError(err, "create-stripe-subscription"),
+        variant: "destructive",
+      });
     }
     setCreatingSubscription(false);
   }
@@ -172,7 +176,11 @@ export default function InstanceDetail() {
       toast({ title: "Subscrição cancelada" });
       fetchData();
     } catch (err) {
-      toast({ title: "Erro ao cancelar", description: String(err), variant: "destructive" });
+      toast({
+        title: "Erro ao cancelar",
+        description: describeEdgeFunctionError(err, "cancel-stripe-subscription"),
+        variant: "destructive",
+      });
     }
     setCancellingSubscription(false);
   }
