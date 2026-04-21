@@ -3,15 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,50 +13,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { UserPlus, Mail, Power, PowerOff, Loader2, Users as UsersIcon } from "lucide-react";
+import { UserPlus, Users as UsersIcon } from "lucide-react";
 import type { AppRole } from "@/hooks/useUserRole";
 import { describeEdgeFunctionError } from "@/lib/edgeFunctionError";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { DataPagination } from "@/components/DataPagination";
-
-interface ManagedUser {
-  id: string;
-  email: string;
-  created_at: string;
-  last_sign_in_at: string | null;
-  email_confirmed_at: string | null;
-  banned_until: string | null;
-  roles: AppRole[];
-}
-
-interface PendingInvite {
-  email: string;
-  role: AppRole;
-  created_at: string;
-}
+import { UsersTable } from "./users/UsersTable";
+import { PendingInvitesTable } from "./users/PendingInvitesTable";
+import { InviteUserDialog } from "./users/InviteUserDialog";
+import type { ManagedUser, PendingInvite } from "./users/types";
 
 const PAGE_SIZE = 20;
-
-const ROLE_LABELS: Record<AppRole, string> = {
-  super_admin: "Super Admin",
-  admin: "Admin",
-  support: "Support",
-};
-
-const ROLE_VARIANTS: Record<AppRole, "default" | "secondary" | "outline"> = {
-  super_admin: "default",
-  admin: "secondary",
-  support: "outline",
-};
 
 export default function UsersPage() {
   const { toast } = useToast();
@@ -221,89 +180,14 @@ export default function UsersPage() {
             />
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Criado</TableHead>
-                    <TableHead>Último login</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedUsers.map((u) => {
-                    const currentRole = (u.roles[0] as AppRole | undefined) ?? "support";
-                    const isBanned = !!u.banned_until && new Date(u.banned_until) > new Date();
-                    const isBusy = busyId === u.id;
-                    return (
-                      <TableRow key={u.id}>
-                        <TableCell className="font-medium">{u.email}</TableCell>
-                        <TableCell>
-                          {u.roles.length === 0 ? (
-                            <Badge variant="outline">Sem role</Badge>
-                          ) : (
-                            <Select
-                              value={currentRole}
-                              onValueChange={(v) => {
-                                const newRole = v as AppRole;
-                                if (newRole === currentRole) return;
-                                if (newRole === "super_admin") {
-                                  setConfirmPromote({ userId: u.id, email: u.email });
-                                } else {
-                                  handleRoleChange(u.id, newRole);
-                                }
-                              }}
-                              disabled={isBusy}
-                            >
-                              <SelectTrigger className="w-[160px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="super_admin">Super Admin</SelectItem>
-                                <SelectItem value="admin">Admin</SelectItem>
-                                <SelectItem value="support">Support</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {new Date(u.created_at).toLocaleDateString("pt-PT")}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("pt-PT") : "Nunca"}
-                        </TableCell>
-                        <TableCell>
-                          {isBanned ? (
-                            <Badge variant="destructive">Desativado</Badge>
-                          ) : u.email_confirmed_at ? (
-                            <Badge>Activo</Badge>
-                          ) : (
-                            <Badge variant="secondary">Pendente</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={isBusy}
-                            onClick={() => (isBanned ? handleToggleActive(u) : setConfirmUser(u))}
-                          >
-                            {isBusy ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : isBanned ? (
-                              <Power className="h-4 w-4" />
-                            ) : (
-                              <PowerOff className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+              <UsersTable
+                users={paginatedUsers}
+                busyId={busyId}
+                onRoleChange={handleRoleChange}
+                onRequestPromote={(u) => setConfirmPromote({ userId: u.id, email: u.email })}
+                onRequestDeactivate={setConfirmUser}
+                onReactivate={handleToggleActive}
+              />
               <DataPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />
             </>
           )}
@@ -316,88 +200,21 @@ export default function UsersPage() {
             <CardTitle>Convites pendentes</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role atribuído</TableHead>
-                  <TableHead>Convidado em</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pending.map((p) => (
-                  <TableRow key={p.email}>
-                    <TableCell>{p.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={ROLE_VARIANTS[p.role]}>{ROLE_LABELS[p.role]}</Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {new Date(p.created_at).toLocaleString("pt-PT")}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={busyId === p.email}
-                        onClick={() => handleResendInvite(p.email, p.role)}
-                      >
-                        {busyId === p.email ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Mail className="mr-2 h-4 w-4" />
-                        )}
-                        Reenviar
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <PendingInvitesTable pending={pending} busyId={busyId} onResend={handleResendInvite} />
           </CardContent>
         </Card>
       )}
 
-      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Convidar utilizador</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
-              <Input
-                type="email"
-                placeholder="utilizador@exemplo.pt"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Role</label>
-              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as AppRole)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="super_admin">Super Admin — acesso total</SelectItem>
-                  <SelectItem value="admin">Admin — gere instâncias e subscrições</SelectItem>
-                  <SelectItem value="support">Support — só leitura</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setInviteOpen(false)} disabled={inviting}>
-              Cancelar
-            </Button>
-            <Button onClick={handleInvite} disabled={inviting || !inviteEmail.trim()}>
-              {inviting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Enviar convite
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <InviteUserDialog
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        email={inviteEmail}
+        role={inviteRole}
+        inviting={inviting}
+        onEmailChange={setInviteEmail}
+        onRoleChange={setInviteRole}
+        onSubmit={handleInvite}
+      />
 
       <AlertDialog open={!!confirmUser} onOpenChange={(o) => !o && setConfirmUser(null)}>
         <AlertDialogContent>
