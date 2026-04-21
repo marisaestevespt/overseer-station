@@ -98,7 +98,7 @@ export function EmailBrandingTab() {
         <div className="grid md:grid-cols-2 gap-4 max-w-2xl">
           <div className="space-y-2">
             <Label>Nome do negócio *</Label>
-            <Input value={emailSettings.business_name} onChange={(e) => updateField("business_name", e.target.value)} placeholder="Lyrata" />
+            <Input value={emailSettings.business_name} onChange={(e) => updateField("business_name", e.target.value)} placeholder="Lyrata®" />
           </div>
           <div className="space-y-2">
             <Label>Email de contacto *</Label>

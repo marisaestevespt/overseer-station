@@ -20,7 +20,7 @@ export interface EmailSettings {
 
 export const defaultEmailSettings: EmailSettings = {
   id: "",
-  business_name: "Lyrata",
+  business_name: "Lyrata®",
   contact_email: "suporte@lyrata.pt",
   phone: "",
   address: "",
