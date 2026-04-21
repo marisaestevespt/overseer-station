@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,11 @@ import type { Database } from "@/integrations/supabase/types";
 import { describeEdgeFunctionError } from "@/lib/edgeFunctionError";
 import { useInstance } from "@/hooks/queries/useInstances";
 import { useInstanceActivityLog } from "@/hooks/queries/useActivityLog";
+import { CardSkeleton } from "@/components/CardSkeleton";
+import { TableSkeleton } from "@/components/TableSkeleton";
+import { DataPagination } from "@/components/DataPagination";
+
+const ACTIVITY_PAGE_SIZE = 10;
 
 type Instance = Database["public"]["Tables"]["instances"]["Row"];
 
@@ -25,8 +30,9 @@ export default function InstanceDetail() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: instanceData } = useInstance(id);
-  const { data: activities = [] } = useInstanceActivityLog(id);
+  const { data: instanceData, isLoading: instanceLoading } = useInstance(id);
+  const { data: activities = [], isLoading: activitiesLoading } = useInstanceActivityLog(id);
+  const [activityPage, setActivityPage] = useState(1);
 
   const instance: Instance | null = instanceData
     ? ({ ...(instanceData as object), subscriptions: undefined } as unknown as Instance)
@@ -34,6 +40,13 @@ export default function InstanceDetail() {
   const subscription = instanceData?.subscriptions && instanceData.subscriptions.length > 0
     ? instanceData.subscriptions[0]
     : null;
+
+  const activityTotalPages = Math.max(1, Math.ceil(activities.length / ACTIVITY_PAGE_SIZE));
+  const activityCurrentPage = Math.min(activityPage, activityTotalPages);
+  const paginatedActivities = useMemo(
+    () => activities.slice((activityCurrentPage - 1) * ACTIVITY_PAGE_SIZE, activityCurrentPage * ACTIVITY_PAGE_SIZE),
+    [activities, activityCurrentPage],
+  );
 
   const [editing, setEditing] = useState<Record<string, boolean>>({});
   const [editValues, setEditValues] = useState<Record<string, string>>({});
