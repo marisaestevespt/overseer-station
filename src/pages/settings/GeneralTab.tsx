@@ -199,7 +199,7 @@ export function GeneralTab() {
         </div>
         <div className="flex gap-3 max-w-lg">
           <Input value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} placeholder="https://..." className="flex-1" />
-          <Button onClick={() => saveAdminSetting.mutate({ key: "webhook_url", value: webhookUrl })} disabled={savingWebhook}>
+          <Button onClick={saveWebhook} disabled={savingWebhook || !webhookDirty}>
             <Save className="mr-1 h-3 w-3" /> {savingWebhook ? "..." : "Guardar"}
           </Button>
         </div>
@@ -215,7 +215,7 @@ export function GeneralTab() {
         </div>
         <div className="flex gap-3 max-w-lg">
           <Input type="password" value={githubToken} onChange={(e) => setGithubToken(e.target.value)} placeholder="ghp_..." className="flex-1" />
-          <Button onClick={() => saveAdminSetting.mutate({ key: "github_token", value: githubToken })} disabled={savingGithub}>
+          <Button onClick={saveGithub} disabled={savingGithub || !githubDirty}>
             <Save className="mr-1 h-3 w-3" /> {savingGithub ? "..." : "Guardar"}
           </Button>
         </div>
