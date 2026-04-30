@@ -284,6 +284,25 @@ export default function NewInstance() {
         </div>
 
         <div className="space-y-2">
+          <Label>URL de estatísticas</Label>
+          <Input
+            value={form.stats_url}
+            onChange={(e) => setForm((f) => ({ ...f, stats_url: e.target.value }))}
+            placeholder={subdomain ? `https://${subdomain}.lyrata.pt/functions/v1/admin-stats` : "https://.../functions/v1/admin-stats"}
+          />
+          <p className="text-xs text-muted-foreground">Endpoint da instância que devolve métricas. Opcional na criação.</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Chave de estatísticas</Label>
+          <Input
+            value={form.stats_key}
+            onChange={(e) => setForm((f) => ({ ...f, stats_key: e.target.value }))}
+            placeholder="x-admin-key da instância"
+          />
+        </div>
+
+        <div className="space-y-2">
           <Label>Notas</Label>
           <Textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={3} />
         </div>
