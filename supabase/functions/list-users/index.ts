@@ -10,13 +10,13 @@ Deno.serve(async (req) => {
   const { data: usersList, error: listErr } = await service.auth.admin.listUsers({ perPage: 200 });
   if (listErr) {
     console.error("listUsers failed", listErr);
-    return jsonResponse({ error: "Failed to list users" }, 500);
+    return jsonResponse({ error: "Failed to list users" }, 500, req);
   }
 
   const { data: roles, error: rolesErr } = await service.from("user_roles").select("user_id, role");
   if (rolesErr) {
     console.error("roles fetch failed", rolesErr);
-    return jsonResponse({ error: "Failed to fetch roles" }, 500);
+    return jsonResponse({ error: "Failed to fetch roles" }, 500, req);
   }
 
   const { data: pending } = await service.from("pending_user_invites").select("email, role, created_at");
@@ -38,5 +38,5 @@ Deno.serve(async (req) => {
     roles: rolesByUser.get(u.id) ?? [],
   }));
 
-  return jsonResponse({ users, pending: pending ?? [] });
+  return jsonResponse({ users, pending: pending ?? [] }, req);
 });

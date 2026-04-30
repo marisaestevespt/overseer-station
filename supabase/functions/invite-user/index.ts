@@ -23,9 +23,9 @@ Deno.serve(async (req) => {
   if (rate) return rate;
 
   let body: unknown;
-  try { body = await req.json(); } catch { return jsonResponse({ error: "Invalid JSON" }, 400); }
+  try { body = await req.json(); } catch { return jsonResponse({ error: "Invalid JSON" }, 400, req); }
   const parsed = BodySchema.safeParse(body);
-  if (!parsed.success) return jsonResponse({ error: parsed.error.flatten().fieldErrors }, 400);
+  if (!parsed.success) return jsonResponse({ error: parsed.error.flatten().fieldErrors }, 400, req);
 
   const { email, role } = parsed.data;
   const service = getServiceClient();
@@ -36,16 +36,16 @@ Deno.serve(async (req) => {
     .upsert({ email, role, invited_by: ctx.userId }, { onConflict: "email" });
   if (pendingErr) {
     console.error("pending insert failed", pendingErr);
-    return jsonResponse({ error: "Failed to register invite" }, 500);
+    return jsonResponse({ error: "Failed to register invite" }, 500, req);
   }
 
   const redirectTo = Deno.env.get("ALLOWED_ORIGIN") ?? undefined;
   const { data, error } = await service.auth.admin.inviteUserByEmail(email, redirectTo ? { redirectTo } : undefined);
   if (error) {
     console.error("inviteUserByEmail failed", error);
-    return jsonResponse({ error: error.message }, 400);
+    return jsonResponse({ error: error.message }, 400, req);
   }
 
   await logAdminAction(ctx, "user_invited", "user", data.user?.id ?? null, { email, role });
-  return jsonResponse({ ok: true, user_id: data.user?.id ?? null });
+  return jsonResponse({ ok: true, user_id: data.user?.id ?? null }, req);
 });

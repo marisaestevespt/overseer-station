@@ -23,14 +23,14 @@ Deno.serve(async (req) => {
   if (rate) return rate;
 
   let body: unknown;
-  try { body = await req.json(); } catch { return jsonResponse({ error: "Invalid JSON" }, 400); }
+  try { body = await req.json(); } catch { return jsonResponse({ error: "Invalid JSON" }, 400, req); }
   const parsed = BodySchema.safeParse(body);
-  if (!parsed.success) return jsonResponse({ error: parsed.error.flatten().fieldErrors }, 400);
+  if (!parsed.success) return jsonResponse({ error: parsed.error.flatten().fieldErrors }, 400, req);
 
   const { user_id, role } = parsed.data;
 
   if (user_id === ctx.userId) {
-    return jsonResponse({ error: "Não podes alterar o teu próprio role." }, 400);
+    return jsonResponse({ error: "Não podes alterar o teu próprio role." }, 400, req);
   }
 
   const service = getServiceClient();
@@ -38,15 +38,15 @@ Deno.serve(async (req) => {
   const { error: delErr } = await service.from("user_roles").delete().eq("user_id", user_id);
   if (delErr) {
     console.error("role delete failed", delErr);
-    return jsonResponse({ error: "Failed to remove old role" }, 500);
+    return jsonResponse({ error: "Failed to remove old role" }, 500, req);
   }
 
   const { error: insErr } = await service.from("user_roles").insert({ user_id, role });
   if (insErr) {
     console.error("role insert failed", insErr);
-    return jsonResponse({ error: "Failed to assign new role" }, 500);
+    return jsonResponse({ error: "Failed to assign new role" }, 500, req);
   }
 
   await logAdminAction(ctx, "role_changed", "user", user_id, { new_role: role });
-  return jsonResponse({ ok: true });
+  return jsonResponse({ ok: true }, req);
 });

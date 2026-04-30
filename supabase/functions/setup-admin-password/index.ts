@@ -14,7 +14,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
   if (req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405);
+    return jsonResponse({ error: "Method not allowed" }, 405, req);
   }
 
   // 1. Auth + role
@@ -30,7 +30,7 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { userId } = body as { userId?: string };
     if (!userId || typeof userId !== "string") {
-      return jsonResponse({ error: "userId is required" }, 400);
+      return jsonResponse({ error: "userId is required" }, 400, req);
     }
 
     const service = getServiceClient();
@@ -41,7 +41,7 @@ serve(async (req) => {
       await logAdminAction(ctx, "setup_admin_password_failed", "auth.user", userId, {
         reason: "target user not found",
       });
-      return jsonResponse({ error: "Target user not found" }, 404);
+      return jsonResponse({ error: "Target user not found" }, 404, req);
     }
 
     // 3. Send a recovery link instead of setting password directly.
@@ -55,7 +55,7 @@ serve(async (req) => {
         target_email: targetUser.user.email,
         reason: linkErr.message,
       });
-      return jsonResponse({ error: "Failed to generate recovery link" }, 500);
+      return jsonResponse({ error: "Failed to generate recovery link" }, 500, req);
     }
 
     await logAdminAction(ctx, "setup_admin_password_link_sent", "auth.user", userId, {
@@ -69,12 +69,12 @@ serve(async (req) => {
       // Note: linkData.properties.action_link is also returned by Supabase; we omit it from the response
       // to avoid exposing a password-reset link to whoever calls this endpoint.
       action_link_generated: Boolean(linkData?.properties?.action_link),
-    });
+    }, req);
   } catch (error) {
     console.error("setup-admin-password error", error);
     await logAdminAction(ctx, "setup_admin_password_error", "auth.user", null, {
       error: String(error),
     });
-    return jsonResponse({ error: "Internal error" }, 500);
+    return jsonResponse({ error: "Internal error" }, 500, req);
   }
 });
