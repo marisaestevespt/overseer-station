@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [healthFilter, setHealthFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [showProblems, setShowProblems] = useState(false);
 
   // Flatten subscriptions array → single subscription per instance (matches old shape)
   const instances = useMemo<InstanceWithSub[]>(() => {
