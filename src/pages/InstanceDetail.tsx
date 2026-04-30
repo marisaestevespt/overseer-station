@@ -214,9 +214,13 @@ export default function InstanceDetail() {
         <StatusBadge status={instance.status} />
       </div>
 
+      <InstanceSetupGuideCard instance={instance} />
+
       <InstanceGeneralCard instance={instance} onSaveField={handleSaveField} />
 
       <InstanceDomainCard instance={instance} />
+
+      <InstanceStatsCard instance={instance} />
 
       <InstanceSubscriptionCard
         instance={instance}
