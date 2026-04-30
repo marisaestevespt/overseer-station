@@ -11,7 +11,7 @@ import {
 const BodySchema = z.object({ user_id: z.string().uuid() });
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response(null, { headers: buildCorsHeaders(req) });
 
   const ctx = await requireSuperAdmin(req);
   if (ctx instanceof Response) return ctx;

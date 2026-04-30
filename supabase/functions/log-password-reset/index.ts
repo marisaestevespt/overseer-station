@@ -18,7 +18,7 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response(null, { headers: buildCorsHeaders(req) });
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return jsonResponse({ error: "Unauthorized" }, 401);

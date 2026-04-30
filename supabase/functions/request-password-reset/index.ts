@@ -27,7 +27,7 @@ const BodySchema = z.object({
 const UNIFORM_RESPONSE = { ok: true, message: "Se o email existir, vais receber instruções." };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response(null, { headers: buildCorsHeaders(req) });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
   let body: unknown;
