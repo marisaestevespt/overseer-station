@@ -64,7 +64,38 @@ export default function NewInstance() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate subdomain
+    if (!subdomain) {
+      setSubdomainError("Subdomínio obrigatório.");
+      return;
+    }
+    if (!isValidSubdomain(subdomain)) {
+      setSubdomainError("Apenas letras minúsculas, números e hífens (1-32 caracteres, sem hífen no início/fim).");
+      return;
+    }
+
     setLoading(true);
+
+    // Check uniqueness
+    const { data: existing, error: checkError } = await supabase
+      .from("instances")
+      .select("id")
+      .eq("subdomain", subdomain)
+      .maybeSingle();
+    if (checkError) {
+      toast({ title: "Erro ao validar subdomínio", description: checkError.message, variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+    if (existing) {
+      setSubdomainError("Este subdomínio já está em uso.");
+      setLoading(false);
+      return;
+    }
+
+    const instanceUrl = buildInstanceUrl(subdomain);
+    const healthCheckUrl = buildHealthCheckUrl(subdomain);
 
     let instance: any = null;
     try {
@@ -74,8 +105,9 @@ export default function NewInstance() {
           business_name: form.business_name,
           owner_name: form.owner_name,
           owner_email: form.owner_email,
-          instance_url: form.instance_url || null,
-          health_check_url: form.health_check_url || null,
+          subdomain,
+          instance_url: instanceUrl,
+          health_check_url: healthCheckUrl,
           notes: form.notes || null,
           status: "setup",
           sector: form.sector || null,
@@ -107,7 +139,7 @@ export default function NewInstance() {
       const { error: logError } = await supabase.from("activity_log").insert({
         instance_id: instance.id,
         action: "Instância criada",
-        details: `Negócio: ${form.business_name}, Owner: ${form.owner_name}, Setor: ${form.sector || "N/A"}${billingStartDate ? `, Cobrança a partir de: ${format(billingStartDate, "dd/MM/yyyy")}` : ""}`,
+        details: `Negócio: ${form.business_name}, Owner: ${form.owner_name}, Subdomínio: ${subdomain}.${ROOT_DOMAIN}, Setor: ${form.sector || "N/A"}${billingStartDate ? `, Cobrança a partir de: ${format(billingStartDate, "dd/MM/yyyy")}` : ""}`,
         performed_by: "admin",
       });
       if (logError) {
@@ -124,13 +156,13 @@ export default function NewInstance() {
     }
 
     // Send welcome email if subscription is active
-    if (form.monthly_amount && form.instance_url) {
+    if (form.monthly_amount) {
       try {
         await supabase.functions.invoke("send-email", {
           body: {
             template: "welcome",
             instanceId: instance.id,
-            extraData: { instanceUrl: form.instance_url },
+            extraData: { instanceUrl },
           },
         });
         toast({ title: "Email enviado", description: `Email de boas-vindas enviado para ${form.owner_email}.` });
@@ -160,7 +192,7 @@ export default function NewInstance() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Nome do negócio *</Label>
-            <Input value={form.business_name} onChange={(e) => setForm((f) => ({ ...f, business_name: e.target.value }))} required />
+            <Input value={form.business_name} onChange={(e) => handleBusinessNameChange(e.target.value)} required />
           </div>
           <div className="space-y-2">
             <Label>Nome do owner *</Label>
@@ -190,13 +222,26 @@ export default function NewInstance() {
         </div>
 
         <div className="space-y-2">
-          <Label>URL da instância</Label>
-          <Input value={form.instance_url} onChange={(e) => handleUrlChange(e.target.value)} placeholder="https://..." />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Health check URL</Label>
-          <Input value={form.health_check_url} onChange={(e) => setForm((f) => ({ ...f, health_check_url: e.target.value }))} placeholder="Preenchido automaticamente" />
+          <Label>Subdomínio *</Label>
+          <div className="flex items-stretch">
+            <Input
+              value={subdomain}
+              onChange={(e) => handleSubdomainChange(e.target.value)}
+              placeholder="exemplo"
+              className="rounded-r-none"
+              required
+            />
+            <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-input bg-muted text-sm text-muted-foreground whitespace-nowrap">
+              .{ROOT_DOMAIN}
+            </span>
+          </div>
+          {subdomainError ? (
+            <p className="text-xs text-destructive">{subdomainError}</p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              {subdomain ? `URL final: https://${subdomain}.${ROOT_DOMAIN}` : "Apenas letras minúsculas, números e hífens."}
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
