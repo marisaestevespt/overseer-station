@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Server, Settings, AlertTriangle, DollarSign, Clock, Plus, ExternalLink, Eye, TrendingUp, TrendingDown, Users, AlertCircle } from "lucide-react";
-import { format, subDays, subMonths, startOfMonth, endOfMonth, differenceInDays } from "date-fns";
+import { Server, Settings, AlertTriangle, DollarSign, Clock, Plus, ExternalLink, Eye, TrendingUp, TrendingDown, Users, AlertCircle, ChevronRight } from "lucide-react";
+import { format, subDays, subMonths, startOfMonth, endOfMonth, differenceInDays, formatDistanceToNow } from "date-fns";
+import { pt } from "date-fns/locale";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useInstances, type InstanceWithSubscriptions } from "@/hooks/queries/useInstances";
@@ -36,6 +37,7 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [healthFilter, setHealthFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [showProblems, setShowProblems] = useState(false);
 
   // Flatten subscriptions array → single subscription per instance (matches old shape)
   const instances = useMemo<InstanceWithSub[]>(() => {
@@ -81,7 +83,26 @@ export default function Dashboard() {
       .sort((a, b) => a.daysUntilSuspension - b.daysUntilSuspension);
   }, [instances]);
 
-  // Advanced metrics
+  // Instances with health problems
+  const problemInstances = useMemo(() => {
+    return instances
+      .filter((i) => i.health_status === "error")
+      .map((i) => {
+        const hasUrl = !!(i.health_check_url || i.instance_url);
+        const reason = !hasUrl
+          ? "Sem URL de health check configurado"
+          : "Endpoint não respondeu (HTTP error ou timeout)";
+        const since = i.last_health_check
+          ? formatDistanceToNow(new Date(i.last_health_check), { locale: pt, addSuffix: true })
+          : "nunca verificado";
+        return { ...i, reason, since };
+      })
+      .sort((a, b) => {
+        const da = a.last_health_check ? new Date(a.last_health_check).getTime() : 0;
+        const db = b.last_health_check ? new Date(b.last_health_check).getTime() : 0;
+        return db - da;
+      });
+  }, [instances]);
   const metrics = useMemo(() => {
     const now = new Date();
     const thirtyDaysAgo = subDays(now, 30);
@@ -207,10 +228,54 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <KPICard title="Instâncias Activas" value={basicKpis.activeCount} icon={Server} accent="success" />
         <KPICard title="Em Setup" value={basicKpis.setupCount} icon={Settings} />
-        <KPICard title="Com Problemas" value={basicKpis.errorCount} icon={AlertTriangle} accent="destructive" />
+        <KPICard
+          title="Com Problemas"
+          value={basicKpis.errorCount}
+          icon={AlertTriangle}
+          accent="destructive"
+          onClick={basicKpis.errorCount > 0 ? () => setShowProblems((v) => !v) : undefined}
+        />
         <KPICard title="MRR Total" value={`€${basicKpis.mrr.toFixed(2)}`} icon={DollarSign} accent="success" />
         <KPICard title="Pagamento em Atraso" value={basicKpis.pastDueCount} icon={Clock} accent="warning" />
       </div>
+
+      {/* Problems detail (toggled by clicking "Com Problemas") */}
+      {showProblems && problemInstances.length > 0 && (
+        <div className="hq-card p-4 border-l-4 border-destructive">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Instâncias com problemas ({problemInstances.length})
+            </h3>
+            <Button size="sm" variant="ghost" onClick={() => setShowProblems(false)}>
+              Fechar
+            </Button>
+          </div>
+          <div className="divide-y divide-border">
+            {problemInstances.map((i) => (
+              <button
+                key={i.id}
+                onClick={() => navigate(`/instances/${i.id}`)}
+                className="flex items-center justify-between w-full text-left py-2.5 px-2 rounded hover:bg-accent/10 transition-colors group"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium truncate">{i.business_name}</span>
+                    <StatusBadge status={i.health_status} />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                    {i.reason} · verificado {i.since}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground shrink-0 ml-2" />
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            Clica numa instância para ver o histórico completo de erros (Activity log) e tentar nova verificação.
+          </p>
+        </div>
+      )}
 
       {/* Advanced KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
