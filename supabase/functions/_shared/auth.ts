@@ -36,10 +36,13 @@ export const corsHeaders = {
   ...BASE_CORS_HEADERS,
 };
 
-export function jsonResponse(body: unknown, status = 200, req?: Request) {
+export function jsonResponse(body: unknown, statusOrReq: number | Request = 200, req?: Request) {
+  const status = statusOrReq instanceof Request ? 200 : statusOrReq;
+  const request = statusOrReq instanceof Request ? statusOrReq : req;
+
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...(req ? buildCorsHeaders(req) : corsHeaders), "Content-Type": "application/json" },
+    headers: { ...(request ? buildCorsHeaders(request) : corsHeaders), "Content-Type": "application/json" },
   });
 }
 
