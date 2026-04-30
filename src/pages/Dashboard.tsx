@@ -83,7 +83,26 @@ export default function Dashboard() {
       .sort((a, b) => a.daysUntilSuspension - b.daysUntilSuspension);
   }, [instances]);
 
-  // Advanced metrics
+  // Instances with health problems
+  const problemInstances = useMemo(() => {
+    return instances
+      .filter((i) => i.health_status === "error")
+      .map((i) => {
+        const hasUrl = !!(i.health_check_url || i.instance_url);
+        const reason = !hasUrl
+          ? "Sem URL de health check configurado"
+          : "Endpoint não respondeu (HTTP error ou timeout)";
+        const since = i.last_health_check
+          ? formatDistanceToNow(new Date(i.last_health_check), { locale: pt, addSuffix: true })
+          : "nunca verificado";
+        return { ...i, reason, since };
+      })
+      .sort((a, b) => {
+        const da = a.last_health_check ? new Date(a.last_health_check).getTime() : 0;
+        const db = b.last_health_check ? new Date(b.last_health_check).getTime() : 0;
+        return db - da;
+      });
+  }, [instances]);
   const metrics = useMemo(() => {
     const now = new Date();
     const thirtyDaysAgo = subDays(now, 30);
