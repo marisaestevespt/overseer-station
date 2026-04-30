@@ -46,6 +46,8 @@ export default function NewInstance() {
     monthly_amount: "",
     notes: "",
     sector: "",
+    stats_url: "",
+    stats_key: "",
   });
 
   const handleBusinessNameChange = (value: string) => {
