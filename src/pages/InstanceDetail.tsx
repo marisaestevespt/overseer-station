@@ -17,6 +17,8 @@ import { InstanceSubscriptionCard } from "./instance-detail/InstanceSubscription
 import { InstanceHealthCard } from "./instance-detail/InstanceHealthCard";
 import { InstanceActivityCard } from "./instance-detail/InstanceActivityCard";
 import { InstanceDomainCard } from "./instance-detail/InstanceDomainCard";
+import { InstanceStatsCard } from "./instance-detail/InstanceStatsCard";
+import { InstanceSetupGuideCard } from "./instance-detail/InstanceSetupGuideCard";
 
 type Instance = Database["public"]["Tables"]["instances"]["Row"];
 type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
