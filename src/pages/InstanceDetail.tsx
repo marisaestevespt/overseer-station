@@ -16,6 +16,7 @@ import { InstanceGeneralCard } from "./instance-detail/InstanceGeneralCard";
 import { InstanceSubscriptionCard } from "./instance-detail/InstanceSubscriptionCard";
 import { InstanceHealthCard } from "./instance-detail/InstanceHealthCard";
 import { InstanceActivityCard } from "./instance-detail/InstanceActivityCard";
+import { InstanceDomainCard } from "./instance-detail/InstanceDomainCard";
 
 type Instance = Database["public"]["Tables"]["instances"]["Row"];
 type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
@@ -212,6 +213,8 @@ export default function InstanceDetail() {
       </div>
 
       <InstanceGeneralCard instance={instance} onSaveField={handleSaveField} />
+
+      <InstanceDomainCard instance={instance} />
 
       <InstanceSubscriptionCard
         instance={instance}

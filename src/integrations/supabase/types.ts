@@ -141,6 +141,7 @@ export type Database = {
           business_name: string
           created_at: string
           current_version: string | null
+          dns_configured: boolean
           first_login_at: string | null
           github_repo: string | null
           health_check_url: string | null
@@ -154,13 +155,16 @@ export type Database = {
           owner_email: string
           owner_name: string
           sector: string | null
+          ssl_active: boolean
           status: Database["public"]["Enums"]["instance_status"]
+          subdomain: string | null
           supabase_project_ref: string | null
         }
         Insert: {
           business_name: string
           created_at?: string
           current_version?: string | null
+          dns_configured?: boolean
           first_login_at?: string | null
           github_repo?: string | null
           health_check_url?: string | null
@@ -174,13 +178,16 @@ export type Database = {
           owner_email: string
           owner_name: string
           sector?: string | null
+          ssl_active?: boolean
           status?: Database["public"]["Enums"]["instance_status"]
+          subdomain?: string | null
           supabase_project_ref?: string | null
         }
         Update: {
           business_name?: string
           created_at?: string
           current_version?: string | null
+          dns_configured?: boolean
           first_login_at?: string | null
           github_repo?: string | null
           health_check_url?: string | null
@@ -194,7 +201,9 @@ export type Database = {
           owner_email?: string
           owner_name?: string
           sector?: string | null
+          ssl_active?: boolean
           status?: Database["public"]["Enums"]["instance_status"]
+          subdomain?: string | null
           supabase_project_ref?: string | null
         }
         Relationships: []
