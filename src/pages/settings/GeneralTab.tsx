@@ -136,16 +136,26 @@ export function GeneralTab() {
       </div>
 
       <div className="hq-card p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold font-heading">Planos de Subscrição</h2>
+            {plansDirty && (
+              <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-600 dark:text-amber-400">
+                Alterações por guardar
+              </Badge>
+            )}
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={addPlan}>
               <Plus className="mr-1 h-3 w-3" /> Adicionar Plano
             </Button>
-            <Button size="sm" onClick={() => saveAdminSetting.mutate({ key: "subscription_plans", value: plans })} disabled={savingPlans}>
+            {plansDirty && (
+              <Button variant="ghost" size="sm" onClick={discardPlans} disabled={savingPlans}>
+                <Undo2 className="mr-1 h-3 w-3" /> Descartar
+              </Button>
+            )}
+            <Button size="sm" onClick={savePlans} disabled={savingPlans || !plansDirty}>
               <Save className="mr-1 h-3 w-3" /> {savingPlans ? "A guardar..." : "Guardar"}
             </Button>
           </div>
