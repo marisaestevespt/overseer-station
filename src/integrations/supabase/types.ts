@@ -150,12 +150,17 @@ export type Database = {
           instance_url: string | null
           invite_sent_at: string | null
           last_health_check: string | null
+          last_stats: Json | null
+          last_stats_at: string | null
           last_update_check: string | null
           notes: string | null
           owner_email: string
           owner_name: string
           sector: string | null
+          setup_checklist: Json
           ssl_active: boolean
+          stats_key: string | null
+          stats_url: string | null
           status: Database["public"]["Enums"]["instance_status"]
           subdomain: string | null
           supabase_project_ref: string | null
@@ -173,12 +178,17 @@ export type Database = {
           instance_url?: string | null
           invite_sent_at?: string | null
           last_health_check?: string | null
+          last_stats?: Json | null
+          last_stats_at?: string | null
           last_update_check?: string | null
           notes?: string | null
           owner_email: string
           owner_name: string
           sector?: string | null
+          setup_checklist?: Json
           ssl_active?: boolean
+          stats_key?: string | null
+          stats_url?: string | null
           status?: Database["public"]["Enums"]["instance_status"]
           subdomain?: string | null
           supabase_project_ref?: string | null
@@ -196,12 +206,17 @@ export type Database = {
           instance_url?: string | null
           invite_sent_at?: string | null
           last_health_check?: string | null
+          last_stats?: Json | null
+          last_stats_at?: string | null
           last_update_check?: string | null
           notes?: string | null
           owner_email?: string
           owner_name?: string
           sector?: string | null
+          setup_checklist?: Json
           ssl_active?: boolean
+          stats_key?: string | null
+          stats_url?: string | null
           status?: Database["public"]["Enums"]["instance_status"]
           subdomain?: string | null
           supabase_project_ref?: string | null

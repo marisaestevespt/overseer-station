@@ -46,6 +46,8 @@ export default function NewInstance() {
     monthly_amount: "",
     notes: "",
     sector: "",
+    stats_url: "",
+    stats_key: "",
   });
 
   const handleBusinessNameChange = (value: string) => {
@@ -111,6 +113,8 @@ export default function NewInstance() {
           notes: form.notes || null,
           status: "setup",
           sector: form.sector || null,
+          stats_url: form.stats_url.trim() || null,
+          stats_key: form.stats_key.trim() || null,
         } as any)
         .select()
         .single();
@@ -277,6 +281,25 @@ export default function NewInstance() {
             </Popover>
             <p className="text-xs text-muted-foreground">Se em branco, a cobrança começa imediatamente.</p>
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>URL de estatísticas</Label>
+          <Input
+            value={form.stats_url}
+            onChange={(e) => setForm((f) => ({ ...f, stats_url: e.target.value }))}
+            placeholder={subdomain ? `https://${subdomain}.lyrata.pt/functions/v1/admin-stats` : "https://.../functions/v1/admin-stats"}
+          />
+          <p className="text-xs text-muted-foreground">Endpoint da instância que devolve métricas. Opcional na criação.</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Chave de estatísticas</Label>
+          <Input
+            value={form.stats_key}
+            onChange={(e) => setForm((f) => ({ ...f, stats_key: e.target.value }))}
+            placeholder="x-admin-key da instância"
+          />
         </div>
 
         <div className="space-y-2">

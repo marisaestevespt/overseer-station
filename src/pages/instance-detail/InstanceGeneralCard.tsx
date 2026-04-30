@@ -16,6 +16,8 @@ const FIELDS: { label: string; field: keyof Instance; multiline?: boolean }[] = 
   { label: "Nome do negócio", field: "business_name" },
   { label: "Owner", field: "owner_name" },
   { label: "Email", field: "owner_email" },
+  { label: "URL de estatísticas", field: "stats_url" },
+  { label: "Chave de estatísticas", field: "stats_key" },
   { label: "Notas", field: "notes", multiline: true },
 ];
 
