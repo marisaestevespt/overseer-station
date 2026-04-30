@@ -113,6 +113,8 @@ export default function NewInstance() {
           notes: form.notes || null,
           status: "setup",
           sector: form.sector || null,
+          stats_url: form.stats_url.trim() || null,
+          stats_key: form.stats_key.trim() || null,
         } as any)
         .select()
         .single();
