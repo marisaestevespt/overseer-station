@@ -14,7 +14,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
   if (req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405);
+    return jsonResponse({ error: "Method not allowed" }, 405, req);
   }
 
   // 1. Auth + role
@@ -30,7 +30,7 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { email } = body as { email?: string };
     if (!email || typeof email !== "string" || !/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
-      return jsonResponse({ error: "Valid email is required" }, 400);
+      return jsonResponse({ error: "Valid email is required" }, 400, req);
     }
 
     const service = getServiceClient();
@@ -42,7 +42,7 @@ serve(async (req) => {
       await logAdminAction(ctx, "create_admin_user_skipped_existing", "auth.user", existing.id, {
         target_email: email,
       });
-      return jsonResponse({ message: "User already exists", userId: existing.id });
+      return jsonResponse({ message: "User already exists", userId: existing.id }, req);
     }
 
     const tempPassword = crypto.randomUUID() + "Aa1!";
@@ -57,7 +57,7 @@ serve(async (req) => {
         target_email: email,
         reason: error.message,
       });
-      return jsonResponse({ error: error.message }, 500);
+      return jsonResponse({ error: error.message }, 500, req);
     }
 
     // Send a magic link / recovery email so the new user can set their password
@@ -71,12 +71,12 @@ serve(async (req) => {
       success: true,
       userId: data.user?.id,
       message: "User created. They need to confirm their email and set a password.",
-    });
+    }, req);
   } catch (error) {
     console.error("create-admin-user error", error);
     await logAdminAction(ctx, "create_admin_user_error", "auth.user", null, {
       error: String(error),
     });
-    return jsonResponse({ error: "Internal error" }, 500);
+    return jsonResponse({ error: "Internal error" }, 500, req);
   }
 });

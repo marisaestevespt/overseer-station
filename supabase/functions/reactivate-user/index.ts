@@ -20,17 +20,17 @@ Deno.serve(async (req) => {
   if (rate) return rate;
 
   let body: unknown;
-  try { body = await req.json(); } catch { return jsonResponse({ error: "Invalid JSON" }, 400); }
+  try { body = await req.json(); } catch { return jsonResponse({ error: "Invalid JSON" }, 400, req); }
   const parsed = BodySchema.safeParse(body);
-  if (!parsed.success) return jsonResponse({ error: parsed.error.flatten().fieldErrors }, 400);
+  if (!parsed.success) return jsonResponse({ error: parsed.error.flatten().fieldErrors }, 400, req);
 
   const service = getServiceClient();
   const { error } = await service.auth.admin.updateUserById(parsed.data.user_id, { ban_duration: "none" });
   if (error) {
     console.error("reactivate failed", error);
-    return jsonResponse({ error: error.message }, 500);
+    return jsonResponse({ error: error.message }, 500, req);
   }
 
   await logAdminAction(ctx, "user_reactivated", "user", parsed.data.user_id, {});
-  return jsonResponse({ ok: true });
+  return jsonResponse({ ok: true }, req);
 });

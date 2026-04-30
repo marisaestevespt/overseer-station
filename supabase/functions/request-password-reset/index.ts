@@ -12,15 +12,15 @@ const UNIFORM_RESPONSE = { ok: true, message: "Se o email existir, vais receber 
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: buildCorsHeaders(req) });
-  if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
+  if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405, req);
 
   let body: unknown;
-  try { body = await req.json(); } catch { return jsonResponse({ error: "Invalid JSON" }, 400); }
+  try { body = await req.json(); } catch { return jsonResponse({ error: "Invalid JSON" }, 400, req); }
 
   const parsed = BodySchema.safeParse(body);
   if (!parsed.success) {
     // Mesmo com email inválido, devolve resposta uniforme (não dar pistas)
-    return jsonResponse(UNIFORM_RESPONSE);
+    return jsonResponse(UNIFORM_RESPONSE, req);
   }
 
   const { email, redirect_to } = parsed.data;
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       user_agent: userAgent,
       performed_by: email,
     });
-    return jsonResponse(UNIFORM_RESPONSE);
+    return jsonResponse(UNIFORM_RESPONSE, req);
   }
 
   await service.from("rate_limits").insert({ ip: RATE_KEY, endpoint: ENDPOINT, count: 1 });
@@ -87,5 +87,5 @@ Deno.serve(async (req) => {
     // Não revelar erro ao cliente
   }
 
-  return jsonResponse(UNIFORM_RESPONSE);
+  return jsonResponse(UNIFORM_RESPONSE, req);
 });

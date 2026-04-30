@@ -5,7 +5,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: buildCorsHeaders(req) });
 
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) return jsonResponse({ error: "Unauthorized" }, 401);
+  if (!authHeader?.startsWith("Bearer ")) return jsonResponse({ error: "Unauthorized" }, 401, req);
   const token = authHeader.slice("Bearer ".length);
 
   const userClient = createClient(
@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
   );
 
   const { data: claimsData, error } = await userClient.auth.getClaims(token);
-  if (error || !claimsData?.claims?.sub) return jsonResponse({ error: "Unauthorized" }, 401);
+  if (error || !claimsData?.claims?.sub) return jsonResponse({ error: "Unauthorized" }, 401, req);
 
   const userId = claimsData.claims.sub as string;
   const email = (claimsData.claims.email as string | undefined) ?? null;
@@ -40,5 +40,5 @@ Deno.serve(async (req) => {
     user_id: userId,
   });
 
-  return jsonResponse({ ok: true });
+  return jsonResponse({ ok: true }, req);
 });

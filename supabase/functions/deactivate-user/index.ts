@@ -20,22 +20,22 @@ Deno.serve(async (req) => {
   if (rate) return rate;
 
   let body: unknown;
-  try { body = await req.json(); } catch { return jsonResponse({ error: "Invalid JSON" }, 400); }
+  try { body = await req.json(); } catch { return jsonResponse({ error: "Invalid JSON" }, 400, req); }
   const parsed = BodySchema.safeParse(body);
-  if (!parsed.success) return jsonResponse({ error: parsed.error.flatten().fieldErrors }, 400);
+  if (!parsed.success) return jsonResponse({ error: parsed.error.flatten().fieldErrors }, 400, req);
 
   const { user_id } = parsed.data;
   if (user_id === ctx.userId) {
-    return jsonResponse({ error: "Não te podes desativar a ti próprio." }, 400);
+    return jsonResponse({ error: "Não te podes desativar a ti próprio." }, 400, req);
   }
 
   const service = getServiceClient();
   const { error } = await service.auth.admin.updateUserById(user_id, { ban_duration: "876000h" });
   if (error) {
     console.error("deactivate failed", error);
-    return jsonResponse({ error: error.message }, 500);
+    return jsonResponse({ error: error.message }, 500, req);
   }
 
   await logAdminAction(ctx, "user_deactivated", "user", user_id, {});
-  return jsonResponse({ ok: true });
+  return jsonResponse({ ok: true }, req);
 });
