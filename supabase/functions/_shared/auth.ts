@@ -1,20 +1,45 @@
 // Shared helpers for admin edge functions: JWT validation, role check, rate limiting, audit log.
 import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2.57.2";
 
-const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
+const ALLOWED_ORIGIN_RAW = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
+const ALLOWED_ORIGINS = ALLOWED_ORIGIN_RAW.split(",").map((s) => s.trim()).filter(Boolean);
+const ALLOW_ALL = ALLOWED_ORIGINS.includes("*");
 
-export const corsHeaders = {
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+// Always allow Lovable preview/sandbox domains (regex) so dev iframes work
+const LOVABLE_PREVIEW_REGEX = /^https:\/\/[a-z0-9-]+\.(lovableproject\.com|lovable\.app|lovable\.dev)$/i;
+
+function resolveOrigin(origin: string | null): string {
+  if (ALLOW_ALL) return origin ?? "*";
+  if (!origin) return ALLOWED_ORIGINS[0] ?? "*";
+  if (ALLOWED_ORIGINS.includes(origin)) return origin;
+  if (LOVABLE_PREVIEW_REGEX.test(origin)) return origin;
+  return ALLOWED_ORIGINS[0] ?? "*";
+}
+
+const BASE_CORS_HEADERS = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Vary": "Origin",
 };
 
-export function jsonResponse(body: unknown, status = 200) {
+export function buildCorsHeaders(req: Request): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": resolveOrigin(req.headers.get("Origin")),
+    ...BASE_CORS_HEADERS,
+  };
+}
+
+// Backwards-compatible static headers (uses first allowed origin or "*")
+export const corsHeaders = {
+  "Access-Control-Allow-Origin": ALLOW_ALL ? "*" : (ALLOWED_ORIGINS[0] ?? "*"),
+  ...BASE_CORS_HEADERS,
+};
+
+export function jsonResponse(body: unknown, status = 200, req?: Request) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...(req ? buildCorsHeaders(req) : corsHeaders), "Content-Type": "application/json" },
   });
 }
 
