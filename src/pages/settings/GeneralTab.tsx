@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { CreditCard, Webhook, GitBranch, Plus, Trash2, Save, Lock } from "lucide-react";
+import { CreditCard, Webhook, GitBranch, Plus, Trash2, Save, Lock, Undo2 } from "lucide-react";
 import { useAdminSettings, useSaveAdminSetting, type Plan } from "@/hooks/queries/useAdminSettings";
 
 export function GeneralTab() {
@@ -19,23 +20,79 @@ export function GeneralTab() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+  // Snapshot do que está guardado em DB — só é actualizado depois de save bem-sucedido ou no carregamento inicial.
+  const [savedPlans, setSavedPlans] = useState<Plan[] | null>(null);
+  const [savedWebhook, setSavedWebhook] = useState<string | null>(null);
+  const [savedGithub, setSavedGithub] = useState<string | null>(null);
 
+  // Inicializa estado local apenas quando ainda não temos snapshot — evita perder edições
+  // quando o React Query refaz fetch (focus, invalidate, etc.).
   useEffect(() => {
-    if (adminSettings) {
+    if (!adminSettings) return;
+    if (savedPlans === null) {
       setPlans(adminSettings.subscription_plans ?? []);
-      setWebhookUrl(adminSettings.webhook_url ?? "");
-      setGithubToken(adminSettings.github_token ?? "");
+      setSavedPlans(adminSettings.subscription_plans ?? []);
     }
-  }, [adminSettings]);
+    if (savedWebhook === null) {
+      setWebhookUrl(adminSettings.webhook_url ?? "");
+      setSavedWebhook(adminSettings.webhook_url ?? "");
+    }
+    if (savedGithub === null) {
+      setGithubToken(adminSettings.github_token ?? "");
+      setSavedGithub(adminSettings.github_token ?? "");
+    }
+  }, [adminSettings, savedPlans, savedWebhook, savedGithub]);
 
   const savingPlans = saveAdminSetting.isPending && saveAdminSetting.variables?.key === "subscription_plans";
   const savingWebhook = saveAdminSetting.isPending && saveAdminSetting.variables?.key === "webhook_url";
   const savingGithub = saveAdminSetting.isPending && saveAdminSetting.variables?.key === "github_token";
 
+  const plansDirty = useMemo(
+    () => JSON.stringify(plans) !== JSON.stringify(savedPlans ?? []),
+    [plans, savedPlans],
+  );
+  const webhookDirty = webhookUrl !== (savedWebhook ?? "");
+  const githubDirty = githubToken !== (savedGithub ?? "");
+
   const addPlan = () => setPlans([...plans, { name: "", price: 0, features: [] }]);
   const removePlan = (index: number) => setPlans(plans.filter((_, i) => i !== index));
   const updatePlan = (index: number, field: keyof Plan, value: Plan[keyof Plan]) =>
     setPlans(plans.map((p, i) => (i === index ? { ...p, [field]: value } : p)));
+
+  const savePlans = () => {
+    // Validação simples: nome e preço numérico válido
+    const cleaned = plans.map((p) => ({
+      name: (p.name ?? "").trim(),
+      price: Number.isFinite(p.price) ? p.price : 0,
+      features: (p.features ?? []).map((f) => f.trim()).filter(Boolean),
+    }));
+    if (cleaned.some((p) => !p.name)) {
+      toast({ title: "Erro", description: "Todos os planos precisam de um nome.", variant: "destructive" });
+      return;
+    }
+    saveAdminSetting.mutate(
+      { key: "subscription_plans", value: cleaned },
+      { onSuccess: () => { setPlans(cleaned); setSavedPlans(cleaned); } },
+    );
+  };
+
+  const saveWebhook = () => {
+    const value = webhookUrl.trim();
+    saveAdminSetting.mutate(
+      { key: "webhook_url", value },
+      { onSuccess: () => { setWebhookUrl(value); setSavedWebhook(value); } },
+    );
+  };
+
+  const saveGithub = () => {
+    const value = githubToken.trim();
+    saveAdminSetting.mutate(
+      { key: "github_token", value },
+      { onSuccess: () => { setGithubToken(value); setSavedGithub(value); } },
+    );
+  };
+
+  const discardPlans = () => setPlans(savedPlans ?? []);
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
