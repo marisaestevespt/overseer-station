@@ -65,7 +65,7 @@ export interface AdminContext {
 export async function requireSuperAdmin(req: Request): Promise<AdminContext | Response> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return jsonResponse({ error: "Unauthorized" }, 401);
+    return jsonResponse({ error: "Unauthorized" }, 401, req);
   }
 
   const token = authHeader.slice("Bearer ".length);
@@ -78,7 +78,7 @@ export async function requireSuperAdmin(req: Request): Promise<AdminContext | Re
 
   const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
   if (claimsError || !claimsData?.claims?.sub) {
-    return jsonResponse({ error: "Unauthorized" }, 401);
+    return jsonResponse({ error: "Unauthorized" }, 401, req);
   }
 
   const userId = claimsData.claims.sub as string;
@@ -95,10 +95,10 @@ export async function requireSuperAdmin(req: Request): Promise<AdminContext | Re
 
   if (roleError) {
     console.error("role lookup failed", roleError);
-    return jsonResponse({ error: "Forbidden" }, 403);
+    return jsonResponse({ error: "Forbidden" }, 403, req);
   }
   if (!roleRow) {
-    return jsonResponse({ error: "Forbidden" }, 403);
+    return jsonResponse({ error: "Forbidden" }, 403, req);
   }
 
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
