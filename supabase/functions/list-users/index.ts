@@ -1,4 +1,4 @@
-import { corsHeaders, jsonResponse, requireSuperAdmin, getServiceClient } from "../_shared/auth.ts";
+import { corsHeaders, buildCorsHeaders, jsonResponse, requireSuperAdmin, getServiceClient } from "../_shared/auth.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: buildCorsHeaders(req) });
