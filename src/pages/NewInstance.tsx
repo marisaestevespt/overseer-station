@@ -13,6 +13,13 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import {
+  ROOT_DOMAIN,
+  buildHealthCheckUrl,
+  buildInstanceUrl,
+  isValidSubdomain,
+  slugifySubdomain,
+} from "@/lib/subdomain";
 
 const SECTORS = [
   "Serviços Digitais",
@@ -29,23 +36,30 @@ export default function NewInstance() {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [billingStartDate, setBillingStartDate] = useState<Date | undefined>();
+  const [subdomain, setSubdomain] = useState("");
+  const [subdomainTouched, setSubdomainTouched] = useState(false);
+  const [subdomainError, setSubdomainError] = useState<string | null>(null);
   const [form, setForm] = useState({
     business_name: "",
     owner_name: "",
     owner_email: "",
-    instance_url: "",
-    health_check_url: "",
     monthly_amount: "",
     notes: "",
     sector: "",
   });
 
-  const handleUrlChange = (url: string) => {
-    setForm((f) => ({
-      ...f,
-      instance_url: url,
-      health_check_url: url ? `${url.replace(/\/$/, "")}/functions/v1/health-check` : "",
-    }));
+  const handleBusinessNameChange = (value: string) => {
+    setForm((f) => ({ ...f, business_name: value }));
+    if (!subdomainTouched) {
+      setSubdomain(slugifySubdomain(value));
+      setSubdomainError(null);
+    }
+  };
+
+  const handleSubdomainChange = (value: string) => {
+    setSubdomainTouched(true);
+    setSubdomain(value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
+    setSubdomainError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
