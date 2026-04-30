@@ -118,6 +118,7 @@ export async function enforceRateLimit(
   endpoint: string,
   limit = 10,
   windowMs = 60 * 60 * 1000,
+  req?: Request,
 ): Promise<Response | null> {
   const service = getServiceClient();
   const now = Date.now();
@@ -133,11 +134,11 @@ export async function enforceRateLimit(
   if (error) {
     console.error("rate limit lookup failed", error);
     // Fail closed for safety
-    return jsonResponse({ error: "Rate limit check failed" }, 503);
+    return jsonResponse({ error: "Rate limit check failed" }, 503, req);
   }
 
   if ((count ?? 0) >= limit) {
-    return jsonResponse({ error: "Too many requests" }, 429);
+    return jsonResponse({ events: "Too many requests", error: "Too many requests" }, 429, req);
   }
 
   await service.from("rate_limits").insert({ ip, endpoint, count: 1 });
