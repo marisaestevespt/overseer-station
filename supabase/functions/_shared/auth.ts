@@ -61,11 +61,9 @@ export interface AdminContext {
   userAgent: string;
 }
 
-/**
- * Validates JWT and confirms the caller has the super_admin role.
- * Returns either an AdminContext or a Response (401/403) to be returned directly.
- */
-export async function requireSuperAdmin(req: Request): Promise<AdminContext | Response> {
+const STAFF_ROLES = ["super_admin", "admin", "support"] as const;
+
+async function resolveContext(req: Request, requiredRoles: readonly string[]): Promise<AdminContext | Response> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return jsonResponse({ error: "Unauthorized" }, 401, req);
@@ -87,13 +85,12 @@ export async function requireSuperAdmin(req: Request): Promise<AdminContext | Re
   const userId = claimsData.claims.sub as string;
   const email = (claimsData.claims.email as string | undefined) ?? null;
 
-  // Check role using service client (bypasses RLS, but explicit query)
   const service = getServiceClient();
   const { data: roleRow, error: roleError } = await service
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
-    .eq("role", "super_admin")
+    .in("role", requiredRoles)
     .maybeSingle();
 
   if (roleError) {
@@ -110,6 +107,21 @@ export async function requireSuperAdmin(req: Request): Promise<AdminContext | Re
   const userAgent = req.headers.get("user-agent") ?? "unknown";
 
   return { userId, email, ip, userAgent };
+}
+
+/**
+ * Validates JWT and confirms the caller has any staff role (super_admin, admin, support).
+ */
+export async function requireStaff(req: Request): Promise<AdminContext | Response> {
+  return resolveContext(req, STAFF_ROLES);
+}
+
+/**
+ * Validates JWT and confirms the caller has the super_admin role.
+ * Returns either an AdminContext or a Response (401/403) to be returned directly.
+ */
+export async function requireSuperAdmin(req: Request): Promise<AdminContext | Response> {
+  return resolveContext(req, ["super_admin"]);
 }
 
 /**

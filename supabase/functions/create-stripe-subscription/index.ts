@@ -3,11 +3,7 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { sepaSetupEmail } from "../_shared/emailTemplates.ts";
 import { getSubCurrentPeriodEndISO } from "../_shared/stripeHelpers.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { requireStaff, buildCorsHeaders, corsHeaders } from "../_shared/auth.ts";
 
 const log = (step: string, details?: any) => {
   console.log(`[CREATE-STRIPE-SUB] ${step}${details ? ` - ${JSON.stringify(details)}` : ""}`);
@@ -15,8 +11,11 @@ const log = (step: string, details?: any) => {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: buildCorsHeaders(req) });
   }
+
+  const ctx = await requireStaff(req);
+  if (ctx instanceof Response) return ctx;
 
   const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
   const priceId = Deno.env.get("STRIPE_PRICE_ID");
@@ -47,7 +46,7 @@ serve(async (req) => {
     if (instErr || !instance) throw new Error("Instance not found");
     log("Instance found", { name: instance.business_name, email: instance.owner_email });
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2024-11-20.acacia" as any });
 
     // Check if customer exists
     const existingCustomers = await stripe.customers.list({ email: instance.owner_email, limit: 1 });
@@ -120,37 +119,21 @@ serve(async (req) => {
     const price = await stripe.prices.retrieve(priceId);
     const monthlyAmount = (price.unit_amount || 0) / 100;
 
-    // Upsert subscription in DB
-    const { data: existingSub } = await supabase
-      .from("subscriptions")
-      .select("id")
-      .eq("instance_id", instanceId)
-      .maybeSingle();
-
     const periodEndISO = getSubCurrentPeriodEndISO(subscription);
 
-    if (existingSub) {
-      await supabase.from("subscriptions").update({
-        stripe_customer_id: customer.id,
-        stripe_subscription_id: subscription.id,
-        status: "active",
-        monthly_amount: monthlyAmount,
-        plan: "standard",
-        current_period_end: periodEndISO,
-        billing_start_date: billingStartDate || null,
-      }).eq("id", existingSub.id);
-    } else {
-      await supabase.from("subscriptions").insert({
-        instance_id: instanceId,
-        stripe_customer_id: customer.id,
-        stripe_subscription_id: subscription.id,
-        status: "active",
-        monthly_amount: monthlyAmount,
-        plan: "standard",
-        current_period_end: periodEndISO,
-        billing_start_date: billingStartDate || null,
-      });
-    }
+    // Atomic upsert — avoids race condition on concurrent requests
+    const { error: upsertErr } = await supabase.from("subscriptions").upsert({
+      instance_id: instanceId,
+      stripe_customer_id: customer.id,
+      stripe_subscription_id: subscription.id,
+      status: "active",
+      monthly_amount: monthlyAmount,
+      plan: "standard",
+      current_period_end: periodEndISO,
+      billing_start_date: billingStartDate || null,
+    }, { onConflict: "instance_id" });
+
+    if (upsertErr) throw new Error(`DB upsert failed: ${upsertErr.message}`);
 
     // Log activity
     await supabase.from("activity_log").insert({

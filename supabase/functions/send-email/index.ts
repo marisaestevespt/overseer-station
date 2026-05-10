@@ -3,11 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { welcomeEmail, sepaSetupEmail, paymentFailedEmail, renewalReminderEmail, reactivationEmail } from "../_shared/emailTemplates.ts";
 import type { EmailBranding } from "../_shared/emailTemplates.ts";
 import { DEFAULT_BRANDING } from "../_shared/emailTemplates.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { requireStaff, buildCorsHeaders, corsHeaders, getServiceClient } from "../_shared/auth.ts";
 
 const log = (step: string, details?: any) => {
   console.log(`[SEND-EMAIL] ${step}${details ? ` - ${JSON.stringify(details)}` : ""}`);
@@ -15,7 +11,16 @@ const log = (step: string, details?: any) => {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: buildCorsHeaders(req) });
+  }
+
+  // Accept either service role key (internal edge-function calls) or a staff JWT (frontend calls)
+  const authHeader = req.headers.get("Authorization");
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const isServiceRole = token && token === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!isServiceRole) {
+    const ctx = await requireStaff(req);
+    if (ctx instanceof Response) return ctx;
   }
 
   const resendKey = Deno.env.get("RESEND_API_KEY");

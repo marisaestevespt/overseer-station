@@ -77,6 +77,17 @@ export default function NewInstance() {
       return;
     }
 
+    // Validate stats_url if provided
+    if (form.stats_url.trim()) {
+      try {
+        const parsed = new URL(form.stats_url.trim());
+        if (!["https:", "http:"].includes(parsed.protocol)) throw new Error();
+      } catch {
+        toast({ title: "URL de estatísticas inválido", description: "Introduz um URL válido (https://...)", variant: "destructive" });
+        return;
+      }
+    }
+
     setLoading(true);
 
     // Check uniqueness

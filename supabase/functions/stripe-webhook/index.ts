@@ -30,7 +30,7 @@ serve(async (req) => {
     { auth: { persistSession: false } }
   );
 
-  const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+  const stripe = new Stripe(stripeKey, { apiVersion: "2024-11-20.acacia" as any });
   const body = await req.text();
   const signature = req.headers.get("stripe-signature");
 
@@ -280,8 +280,18 @@ serve(async (req) => {
       }
     }
   } catch (err) {
-    log("Error processing event", { error: String(err) });
-    return new Response(JSON.stringify({ error: "Processing error" }), { status: 500, headers: corsHeaders });
+    // Return 200 so Stripe does not retry — log the error for investigation
+    log("Error processing event", { error: String(err), event_id: event.id, event_type: event.type });
+    const supabaseForLog = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+    await supabaseForLog.from("activity_log").insert({
+      action: "stripe_webhook_error",
+      details: `Event: ${event.type} (${event.id}) — ${String(err)}`,
+      performed_by: "stripe-webhook",
+    }).catch(() => {});
   }
 
   return new Response(JSON.stringify({ received: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
