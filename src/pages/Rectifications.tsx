@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { ClipboardList, Plus, Search, Trash2, Pencil } from "lucide-react";
+import { ClipboardList, Plus, Search, Trash2, Pencil, Paperclip, Upload, X, Download } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
