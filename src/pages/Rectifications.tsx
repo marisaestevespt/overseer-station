@@ -582,14 +582,95 @@ export default function Rectifications() {
                 placeholder="Notas internas sobre a resolução (opcional)"
               />
             </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Anexos (ficheiros, prints, etc.)</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  addFiles(e.target.files);
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Carregar ficheiros
+              </Button>
+              {(form.attachments.length > 0 || form.newFiles.length > 0) && (
+                <div className="space-y-1 mt-2">
+                  {form.attachments.map((att, idx) => (
+                    <div
+                      key={att.path}
+                      className="flex items-center gap-2 text-sm bg-muted/50 rounded px-2 py-1"
+                    >
+                      <Paperclip className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <button
+                        type="button"
+                        onClick={() => downloadAttachment(att)}
+                        className="flex-1 text-left truncate hover:underline"
+                      >
+                        {att.name}
+                      </button>
+                      <span className="text-xs text-muted-foreground">{formatBytes(att.size)}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() =>
+                          setForm((f) => ({
+                            ...f,
+                            attachments: f.attachments.filter((_, i) => i !== idx),
+                          }))
+                        }
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                  {form.newFiles.map((file, idx) => (
+                    <div
+                      key={`new-${idx}`}
+                      className="flex items-center gap-2 text-sm bg-primary/5 rounded px-2 py-1"
+                    >
+                      <Upload className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <span className="flex-1 truncate">{file.name}</span>
+                      <span className="text-xs text-muted-foreground">{formatBytes(file.size)}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() =>
+                          setForm((f) => ({
+                            ...f,
+                            newFiles: f.newFiles.filter((_, i) => i !== idx),
+                          }))
+                        }
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={uploading}>
               Cancelar
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={
+                uploading ||
                 createMut.isPending ||
                 updateMut.isPending ||
                 !form.client_name.trim() ||
@@ -597,7 +678,7 @@ export default function Rectifications() {
                 !form.detail.trim()
               }
             >
-              {form.id ? "Guardar alterações" : "Criar pedido"}
+              {uploading ? "A carregar..." : form.id ? "Guardar alterações" : "Criar pedido"}
             </Button>
           </DialogFooter>
         </DialogContent>
