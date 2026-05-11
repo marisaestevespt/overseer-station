@@ -95,6 +95,13 @@ const TYPE_LABELS: Record<string, string> = {
   other: "Outro",
 };
 
+type Attachment = {
+  path: string;
+  name: string;
+  size: number;
+  type: string;
+};
+
 type FormState = {
   id?: string;
   client_name: string;
@@ -107,6 +114,8 @@ type FormState = {
   status: Rectification["status"];
   due_date: string;
   resolution_notes: string;
+  attachments: Attachment[];
+  newFiles: File[];
 };
 
 const emptyForm: FormState = {
@@ -120,7 +129,17 @@ const emptyForm: FormState = {
   status: "pending",
   due_date: "",
   resolution_notes: "",
+  attachments: [],
+  newFiles: [],
 };
+
+const BUCKET = "rectification-attachments";
+
+function formatBytes(b: number) {
+  if (b < 1024) return `${b} B`;
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+  return `${(b / 1024 / 1024).toFixed(1)} MB`;
+}
 
 export default function Rectifications() {
   const { data: rows = [], isLoading } = useRectifications();
