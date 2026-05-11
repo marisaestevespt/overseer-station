@@ -400,7 +400,15 @@ export default function Rectifications() {
                       {r.instances?.business_name || "—"}
                     </TableCell>
                     <TableCell className="max-w-xs">
-                      <div className="font-medium text-sm">{r.title}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium text-sm">{r.title}</span>
+                        {Array.isArray(r.attachments) && r.attachments.length > 0 && (
+                          <Badge variant="outline" className="h-5 px-1.5 gap-1 text-xs">
+                            <Paperclip className="h-3 w-3" />
+                            {(r.attachments as unknown as Attachment[]).length}
+                          </Badge>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground truncate">{r.detail}</div>
                     </TableCell>
                     <TableCell className="text-xs">{TYPE_LABELS[r.type]}</TableCell>
