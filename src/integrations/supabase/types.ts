@@ -271,6 +271,63 @@ export type Database = {
         }
         Relationships: []
       }
+      rectification_requests: {
+        Row: {
+          assigned_to: string | null
+          client_email: string | null
+          client_name: string
+          completed_at: string | null
+          created_at: string
+          detail: string
+          due_date: string | null
+          id: string
+          instance_id: string | null
+          priority: Database["public"]["Enums"]["rectification_priority"]
+          requested_at: string
+          resolution_notes: string | null
+          status: Database["public"]["Enums"]["rectification_status"]
+          title: string
+          type: Database["public"]["Enums"]["rectification_type"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          client_email?: string | null
+          client_name: string
+          completed_at?: string | null
+          created_at?: string
+          detail: string
+          due_date?: string | null
+          id?: string
+          instance_id?: string | null
+          priority?: Database["public"]["Enums"]["rectification_priority"]
+          requested_at?: string
+          resolution_notes?: string | null
+          status?: Database["public"]["Enums"]["rectification_status"]
+          title: string
+          type?: Database["public"]["Enums"]["rectification_type"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          client_email?: string | null
+          client_name?: string
+          completed_at?: string | null
+          created_at?: string
+          detail?: string
+          due_date?: string | null
+          id?: string
+          instance_id?: string | null
+          priority?: Database["public"]["Enums"]["rectification_priority"]
+          requested_at?: string
+          resolution_notes?: string | null
+          status?: Database["public"]["Enums"]["rectification_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["rectification_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           billing_start_date: string | null
@@ -367,6 +424,14 @@ export type Database = {
       app_role: "super_admin" | "admin" | "support"
       health_status: "ok" | "error" | "unknown"
       instance_status: "active" | "suspended" | "cancelled" | "setup"
+      rectification_priority: "low" | "medium" | "high" | "urgent"
+      rectification_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "rejected"
+        | "on_hold"
+      rectification_type: "bug" | "feature" | "data_fix" | "config" | "other"
       subscription_status: "active" | "past_due" | "cancelled" | "trialing"
     }
     CompositeTypes: {
@@ -498,6 +563,15 @@ export const Constants = {
       app_role: ["super_admin", "admin", "support"],
       health_status: ["ok", "error", "unknown"],
       instance_status: ["active", "suspended", "cancelled", "setup"],
+      rectification_priority: ["low", "medium", "high", "urgent"],
+      rectification_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "rejected",
+        "on_hold",
+      ],
+      rectification_type: ["bug", "feature", "data_fix", "config", "other"],
       subscription_status: ["active", "past_due", "cancelled", "trialing"],
     },
   },
