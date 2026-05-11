@@ -16,6 +16,7 @@ import ActivityLogPage from "@/pages/ActivityLog";
 import SettingsPage from "@/pages/Settings";
 import UpdatesPage from "@/pages/Updates";
 import UsersPage from "@/pages/Users";
+import RectificationsPage from "@/pages/Rectifications";
 import LoginPage from "@/pages/Login";
 import ForgotPasswordPage from "@/pages/ForgotPassword";
 import ResetPasswordPage from "@/pages/ResetPassword";
@@ -57,6 +58,7 @@ function ProtectedRoutes() {
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/activity" element={<ActivityLogPage />} />
           <Route path="/updates" element={<UpdatesPage />} />
+          <Route path="/rectifications" element={<RectificationsPage />} />
           <Route
             path="/users"
             element={
