@@ -274,6 +274,7 @@ export type Database = {
       rectification_requests: {
         Row: {
           assigned_to: string | null
+          attachments: Json
           client_email: string | null
           client_name: string
           completed_at: string | null
@@ -292,6 +293,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          attachments?: Json
           client_email?: string | null
           client_name: string
           completed_at?: string | null
@@ -310,6 +312,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          attachments?: Json
           client_email?: string | null
           client_name?: string
           completed_at?: string | null

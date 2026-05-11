@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { ClipboardList, Plus, Search, Trash2, Pencil } from "lucide-react";
+import { ClipboardList, Plus, Search, Trash2, Pencil, Paperclip, Upload, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -93,6 +95,13 @@ const TYPE_LABELS: Record<string, string> = {
   other: "Outro",
 };
 
+type Attachment = {
+  path: string;
+  name: string;
+  size: number;
+  type: string;
+};
+
 type FormState = {
   id?: string;
   client_name: string;
@@ -105,6 +114,8 @@ type FormState = {
   status: Rectification["status"];
   due_date: string;
   resolution_notes: string;
+  attachments: Attachment[];
+  newFiles: File[];
 };
 
 const emptyForm: FormState = {
@@ -118,13 +129,25 @@ const emptyForm: FormState = {
   status: "pending",
   due_date: "",
   resolution_notes: "",
+  attachments: [],
+  newFiles: [],
 };
+
+const BUCKET = "rectification-attachments";
+
+function formatBytes(b: number) {
+  if (b < 1024) return `${b} B`;
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+  return `${(b / 1024 / 1024).toFixed(1)} MB`;
+}
 
 export default function Rectifications() {
   const { data: rows = [], isLoading } = useRectifications();
   const { data: instances = [] } = useInstances();
   const { isSuperAdmin, isAdmin } = useUserRole();
   const canEdit = isSuperAdmin || isAdmin;
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const createMut = useCreateRectification();
   const updateMut = useUpdateRectification();
@@ -138,6 +161,7 @@ export default function Rectifications() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -178,32 +202,90 @@ export default function Rectifications() {
       status: r.status,
       due_date: r.due_date ? r.due_date.slice(0, 10) : "",
       resolution_notes: r.resolution_notes ?? "",
+      attachments: Array.isArray(r.attachments) ? (r.attachments as unknown as Attachment[]) : [],
+      newFiles: [],
     });
     setDialogOpen(true);
+  }
+
+  function addFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const arr = Array.from(files);
+    const maxBytes = 15 * 1024 * 1024;
+    const valid = arr.filter((f) => {
+      if (f.size > maxBytes) {
+        toast({
+          title: "Ficheiro demasiado grande",
+          description: `${f.name} excede 15 MB`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      return true;
+    });
+    setForm((f) => ({ ...f, newFiles: [...f.newFiles, ...valid] }));
+  }
+
+  async function downloadAttachment(att: Attachment) {
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(att.path, 60);
+    if (error || !data?.signedUrl) {
+      toast({ title: "Erro ao gerar link", description: error?.message, variant: "destructive" });
+      return;
+    }
+    window.open(data.signedUrl, "_blank");
   }
 
   async function handleSubmit() {
     if (!form.client_name.trim() || !form.title.trim() || !form.detail.trim()) {
       return;
     }
-    const payload: RectificationInsert = {
-      client_name: form.client_name.trim(),
-      client_email: form.client_email.trim() || null,
-      instance_id: form.instance_id || null,
-      title: form.title.trim(),
-      detail: form.detail.trim(),
-      type: form.type,
-      priority: form.priority,
-      status: form.status,
-      due_date: form.due_date ? new Date(form.due_date).toISOString() : null,
-      resolution_notes: form.resolution_notes.trim() || null,
-    };
-    if (form.id) {
-      await updateMut.mutateAsync({ id: form.id, patch: payload });
-    } else {
-      await createMut.mutateAsync(payload);
+    setUploading(true);
+    try {
+      const uploaded: Attachment[] = [];
+      for (const file of form.newFiles) {
+        const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+        const path = `${crypto.randomUUID()}-${safeName}`;
+        const { error } = await supabase.storage
+          .from(BUCKET)
+          .upload(path, file, { contentType: file.type || undefined });
+        if (error) throw error;
+        uploaded.push({
+          path,
+          name: file.name,
+          size: file.size,
+          type: file.type || "application/octet-stream",
+        });
+      }
+      const attachments = [...form.attachments, ...uploaded];
+
+      const payload: RectificationInsert = {
+        client_name: form.client_name.trim(),
+        client_email: form.client_email.trim() || null,
+        instance_id: form.instance_id || null,
+        title: form.title.trim(),
+        detail: form.detail.trim(),
+        type: form.type,
+        priority: form.priority,
+        status: form.status,
+        due_date: form.due_date ? new Date(form.due_date).toISOString() : null,
+        resolution_notes: form.resolution_notes.trim() || null,
+        attachments: attachments as unknown as RectificationInsert["attachments"],
+      };
+      if (form.id) {
+        await updateMut.mutateAsync({ id: form.id, patch: payload });
+      } else {
+        await createMut.mutateAsync(payload);
+      }
+      setDialogOpen(false);
+    } catch (e) {
+      toast({
+        title: "Erro ao guardar",
+        description: (e as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
     }
-    setDialogOpen(false);
   }
 
   return (
@@ -318,7 +400,15 @@ export default function Rectifications() {
                       {r.instances?.business_name || "—"}
                     </TableCell>
                     <TableCell className="max-w-xs">
-                      <div className="font-medium text-sm">{r.title}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium text-sm">{r.title}</span>
+                        {Array.isArray(r.attachments) && r.attachments.length > 0 && (
+                          <Badge variant="outline" className="h-5 px-1.5 gap-1 text-xs">
+                            <Paperclip className="h-3 w-3" />
+                            {(r.attachments as unknown as Attachment[]).length}
+                          </Badge>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground truncate">{r.detail}</div>
                     </TableCell>
                     <TableCell className="text-xs">{TYPE_LABELS[r.type]}</TableCell>
@@ -500,14 +590,95 @@ export default function Rectifications() {
                 placeholder="Notas internas sobre a resolução (opcional)"
               />
             </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Anexos (ficheiros, prints, etc.)</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  addFiles(e.target.files);
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Carregar ficheiros
+              </Button>
+              {(form.attachments.length > 0 || form.newFiles.length > 0) && (
+                <div className="space-y-1 mt-2">
+                  {form.attachments.map((att, idx) => (
+                    <div
+                      key={att.path}
+                      className="flex items-center gap-2 text-sm bg-muted/50 rounded px-2 py-1"
+                    >
+                      <Paperclip className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <button
+                        type="button"
+                        onClick={() => downloadAttachment(att)}
+                        className="flex-1 text-left truncate hover:underline"
+                      >
+                        {att.name}
+                      </button>
+                      <span className="text-xs text-muted-foreground">{formatBytes(att.size)}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() =>
+                          setForm((f) => ({
+                            ...f,
+                            attachments: f.attachments.filter((_, i) => i !== idx),
+                          }))
+                        }
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                  {form.newFiles.map((file, idx) => (
+                    <div
+                      key={`new-${idx}`}
+                      className="flex items-center gap-2 text-sm bg-primary/5 rounded px-2 py-1"
+                    >
+                      <Upload className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <span className="flex-1 truncate">{file.name}</span>
+                      <span className="text-xs text-muted-foreground">{formatBytes(file.size)}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() =>
+                          setForm((f) => ({
+                            ...f,
+                            newFiles: f.newFiles.filter((_, i) => i !== idx),
+                          }))
+                        }
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={uploading}>
               Cancelar
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={
+                uploading ||
                 createMut.isPending ||
                 updateMut.isPending ||
                 !form.client_name.trim() ||
@@ -515,7 +686,7 @@ export default function Rectifications() {
                 !form.detail.trim()
               }
             >
-              {form.id ? "Guardar alterações" : "Criar pedido"}
+              {uploading ? "A carregar..." : form.id ? "Guardar alterações" : "Criar pedido"}
             </Button>
           </DialogFooter>
         </DialogContent>
