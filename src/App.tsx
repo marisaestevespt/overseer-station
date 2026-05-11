@@ -58,6 +58,7 @@ function ProtectedRoutes() {
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/activity" element={<ActivityLogPage />} />
           <Route path="/updates" element={<UpdatesPage />} />
+          <Route path="/rectifications" element={<RectificationsPage />} />
           <Route
             path="/users"
             element={
