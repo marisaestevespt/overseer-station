@@ -1,4 +1,4 @@
-import { LayoutDashboard, Server, CreditCard, Activity, Settings, LogOut, GitBranch, Users } from "lucide-react";
+import { LayoutDashboard, Server, CreditCard, Activity, Settings, LogOut, GitBranch, Users, ClipboardList } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -19,6 +19,7 @@ const baseNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, superAdminOnly: false },
   { title: "Instâncias", url: "/instances", icon: Server, superAdminOnly: false },
   { title: "Subscrições", url: "/subscriptions", icon: CreditCard, superAdminOnly: false },
+  { title: "Pedidos & Retificações", url: "/rectifications", icon: ClipboardList, superAdminOnly: false },
   { title: "Log de Actividade", url: "/activity", icon: Activity, superAdminOnly: false },
   { title: "Atualizações", url: "/updates", icon: GitBranch, superAdminOnly: false },
   { title: "Utilizadores", url: "/users", icon: Users, superAdminOnly: true },
