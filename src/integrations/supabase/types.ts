@@ -326,7 +326,15 @@ export type Database = {
           type?: Database["public"]["Enums"]["rectification_type"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rectification_requests_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
