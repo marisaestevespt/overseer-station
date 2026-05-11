@@ -202,32 +202,90 @@ export default function Rectifications() {
       status: r.status,
       due_date: r.due_date ? r.due_date.slice(0, 10) : "",
       resolution_notes: r.resolution_notes ?? "",
+      attachments: Array.isArray(r.attachments) ? (r.attachments as unknown as Attachment[]) : [],
+      newFiles: [],
     });
     setDialogOpen(true);
+  }
+
+  function addFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const arr = Array.from(files);
+    const maxBytes = 15 * 1024 * 1024;
+    const valid = arr.filter((f) => {
+      if (f.size > maxBytes) {
+        toast({
+          title: "Ficheiro demasiado grande",
+          description: `${f.name} excede 15 MB`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      return true;
+    });
+    setForm((f) => ({ ...f, newFiles: [...f.newFiles, ...valid] }));
+  }
+
+  async function downloadAttachment(att: Attachment) {
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(att.path, 60);
+    if (error || !data?.signedUrl) {
+      toast({ title: "Erro ao gerar link", description: error?.message, variant: "destructive" });
+      return;
+    }
+    window.open(data.signedUrl, "_blank");
   }
 
   async function handleSubmit() {
     if (!form.client_name.trim() || !form.title.trim() || !form.detail.trim()) {
       return;
     }
-    const payload: RectificationInsert = {
-      client_name: form.client_name.trim(),
-      client_email: form.client_email.trim() || null,
-      instance_id: form.instance_id || null,
-      title: form.title.trim(),
-      detail: form.detail.trim(),
-      type: form.type,
-      priority: form.priority,
-      status: form.status,
-      due_date: form.due_date ? new Date(form.due_date).toISOString() : null,
-      resolution_notes: form.resolution_notes.trim() || null,
-    };
-    if (form.id) {
-      await updateMut.mutateAsync({ id: form.id, patch: payload });
-    } else {
-      await createMut.mutateAsync(payload);
+    setUploading(true);
+    try {
+      const uploaded: Attachment[] = [];
+      for (const file of form.newFiles) {
+        const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+        const path = `${crypto.randomUUID()}-${safeName}`;
+        const { error } = await supabase.storage
+          .from(BUCKET)
+          .upload(path, file, { contentType: file.type || undefined });
+        if (error) throw error;
+        uploaded.push({
+          path,
+          name: file.name,
+          size: file.size,
+          type: file.type || "application/octet-stream",
+        });
+      }
+      const attachments = [...form.attachments, ...uploaded];
+
+      const payload: RectificationInsert = {
+        client_name: form.client_name.trim(),
+        client_email: form.client_email.trim() || null,
+        instance_id: form.instance_id || null,
+        title: form.title.trim(),
+        detail: form.detail.trim(),
+        type: form.type,
+        priority: form.priority,
+        status: form.status,
+        due_date: form.due_date ? new Date(form.due_date).toISOString() : null,
+        resolution_notes: form.resolution_notes.trim() || null,
+        attachments: attachments as unknown as RectificationInsert["attachments"],
+      };
+      if (form.id) {
+        await updateMut.mutateAsync({ id: form.id, patch: payload });
+      } else {
+        await createMut.mutateAsync(payload);
+      }
+      setDialogOpen(false);
+    } catch (e) {
+      toast({
+        title: "Erro ao guardar",
+        description: (e as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
     }
-    setDialogOpen(false);
   }
 
   return (
