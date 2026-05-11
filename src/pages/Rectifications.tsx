@@ -146,6 +146,8 @@ export default function Rectifications() {
   const { data: instances = [] } = useInstances();
   const { isSuperAdmin, isAdmin } = useUserRole();
   const canEdit = isSuperAdmin || isAdmin;
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const createMut = useCreateRectification();
   const updateMut = useUpdateRectification();
@@ -159,6 +161,7 @@ export default function Rectifications() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
